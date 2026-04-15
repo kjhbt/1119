@@ -19,8 +19,8 @@ const FIREBASE_CONFIG = {
 };
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/compat/app/dist/index.browser.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/compat/database/dist/index.browser.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -403,8 +403,15 @@ let dragStudentId = null, modalCtx = null;
 let db, curMode;
 
 // ── Firebase 초기화 ────────────────────────────────────
-firebase.initializeApp(FIREBASE_CONFIG);
-db = firebase.database();
+function initFirebase(){
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    loadData();
+  } catch(e) {
+    document.getElementById('loading-box').textContent = 'Firebase 연결 오류: ' + e.message;
+  }
+}
 
 function dbRef(path){ return db.ref(path); }
 
@@ -831,10 +838,12 @@ function goPage(id,btn){
 }
 
 // ── 시작 ──────────────────────────────────────────────
-initMode();
-renderCal();
-renderTimeTags();
-loadData();
+document.addEventListener('DOMContentLoaded', function(){
+  initMode();
+  renderCal();
+  renderTimeTags();
+  initFirebase();
+});
 </script>
 </body>
 </html>
