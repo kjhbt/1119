@@ -370,6 +370,8 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         </div>
       </div>
     </div>
+  </div><!-- sub-assign -->
+
   <!-- 신청 불가 날짜 -->
   <div class="sub-sec" id="sub-blocked">
     <div class="card">
@@ -488,23 +490,23 @@ function initFirebase(){
 function dbRef(path){ return db.ref(path); }
 
 function loadData(){
-  dbRef('applicants').on('value', snap => {
+  dbRef('interview/applicants').on('value', snap => {
     AP = snap.val() || {};
     updateStats(); syncAdminFilters(); renderStudentList();
     renderSidebar(); renderWcal(); renderSchView();
     syncAssignedDates(); renderTeachers();
     document.getElementById('loading-box').style.display = 'none';
   });
-  dbRef('teachers').on('value', snap => {
+  dbRef('interview/teachers').on('value', snap => {
     TC = snap.val() || {};
     updateStats(); renderTeachers(); renderSchView();
   });
-  dbRef('teacher_assigns').on('value', snap => {
+  dbRef('interview/teacher_assigns').on('value', snap => {
     TA = snap.val() || {};
     renderTeacherAssigns();
     renderTaWcal();
   });
-  dbRef('blocked_dates').on('value', snap => {
+  dbRef('interview/blocked_dates').on('value', snap => {
     BD = snap.val() || {};
     renderCal();
     renderBlockedDates();
@@ -616,10 +618,10 @@ function submitApply(){
   if(!parseSid(sid)){ showErr('apply-err','올바른 학번 형식이 아닙니다.'); return; }
   if(!Object.keys(timesObj).length){ showErr('apply-err','가능한 날짜와 교시를 선택해 주세요.'); return; }
 
-  const existRef = dbRef(`applicants/${sid}`);
+  const existRef = dbRef(`interview/applicants/${sid}`);
   existRef.once('value').then(snap=>{
     if(snap.exists()){ showErr('apply-err','이미 등록된 학번입니다.'); return; }
-    dbRef(`applicants/${sid}`).set({sid,name,dept,type,times:timesObj,intro,asgn:'',place:'',registeredAt:Date.now()})
+    dbRef(`interview/applicants/${sid}`).set({sid,name,dept,type,times:timesObj,intro,asgn:'',place:'',registeredAt:Date.now()})
       .then(()=>{
         ['f-sid','f-name','f-dept','f-intro'].forEach(id=>document.getElementById(id).value='');
         document.getElementById('f-type').value='';
@@ -641,15 +643,15 @@ function submitTeacher(){
   const role = cls === '부장' ? '부장' : '';
   const order = role === '부장' ? 0 : (parseInt(cls)||999);
   const id = 't_'+Date.now();
-  dbRef(`teachers/${id}`).set({id, name, subj, cls, role, order}).then(()=>{
+  dbRef(`interview/teachers/${id}`).set({id, name, subj, cls, role, order}).then(()=>{
     ['t-name','t-subj','t-cls'].forEach(i=>document.getElementById(i).value='');
     flash('t-ok');
   });
 }
-function delTeacher(id){ if(confirm('삭제하시겠습니까?')) dbRef(`teachers/${id}`).remove(); }
+function delTeacher(id){ if(confirm('삭제하시겠습니까?')) dbRef(`interview/teachers/${id}`).remove(); }
 function clearAllTeachers(){
   if(!confirm('등록된 선생님을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
-  dbRef('teachers').remove().then(()=>alert('선생님 데이터가 초기화되었습니다.'));
+  dbRef('interview/teachers').remove().then(()=>alert('선생님 데이터가 초기화되었습니다.'));
 }
 
 function sortedTeachers(){
@@ -703,7 +705,7 @@ function addBlockedDate(){
   if(!raw){ alert('날짜를 선택해 주세요.'); return; }
   // 키: YYYYMMDD (숫자만, Firebase 키 제약 없음)
   const key = raw.replaceAll('-','');
-  dbRef(`blocked_dates/${key}`).set({
+  dbRef(`interview/blocked_dates/${key}`).set({
     date: raw, key, reason: reason||'', addedAt: Date.now()
   }).then(()=>{
     document.getElementById('bd-date').value = '';
@@ -714,7 +716,7 @@ function addBlockedDate(){
 
 function removeBlockedDate(key){
   if(confirm('신청 불가 날짜를 해제하시겠습니까?'))
-    dbRef(`blocked_dates/${key}`).remove();
+    dbRef(`interview/blocked_dates/${key}`).remove();
 }
 
 function renderBlockedDates(){
@@ -845,7 +847,7 @@ function saveAllTaAssigns(){
         const t1 = s1?.value||'', t2 = s2?.value||'';
         if(t1||t2){
           const taKey = `ta_${dk}_${p}_${i}`;
-          updates[`teacher_assigns/${taKey}`] = {date:dk, period:+p, place:pl, t1, t2, key:taKey};
+          updates[`interview/teacher_assigns/${taKey}`] = {date:dk, period:+p, place:pl, t1, t2, key:taKey};
         }
       });
     });
@@ -886,7 +888,7 @@ function renderTeacherAssigns(){
       }).join('')}
     </div>`).join('');
 }
-function delTeacherAssign(key){ if(confirm('삭제하시겠습니까?')) dbRef(`teacher_assigns/${key}`).remove(); }
+function delTeacherAssign(key){ if(confirm('삭제하시겠습니까?')) dbRef(`interview/teacher_assigns/${key}`).remove(); }
 
 // ── 인쇄 ─────────────────────────────────────────────
 function printSchedule(){
@@ -986,10 +988,10 @@ function renderStudentList(){
   updateStats();
 }
 
-function setAsgn(sid,v){ dbRef(`applicants/${sid}/asgn`).set(v||''); }
-function setPlace(sid,v){ dbRef(`applicants/${sid}/place`).set(v||''); }
+function setAsgn(sid,v){ dbRef(`interview/applicants/${sid}/asgn`).set(v||''); }
+function setPlace(sid,v){ dbRef(`interview/applicants/${sid}/place`).set(v||''); }
 function setTeacher(sid,slot,v){
-  dbRef(`applicants/${sid}/teacher${slot}`).set(v||'').then(()=>renderTeachers());
+  dbRef(`interview/applicants/${sid}/teacher${slot}`).set(v||'').then(()=>renderTeachers());
 }
 
 // ── 자동 배정 ─────────────────────────────────────────
@@ -1011,8 +1013,8 @@ function autoAssign(){
     const already = Object.values(AP).filter(a=>a.asgn===tk&&a.place).length;
     timeGroups[tk].forEach((sid,i)=>{
       const placeIdx = (already+i) % PLACES.length;
-      updates[`applicants/${sid}/asgn`]   = tk;
-      updates[`applicants/${sid}/place`]  = PLACES[placeIdx];
+      updates[`interview/applicants/${sid}/asgn`]   = tk;
+      updates[`interview/applicants/${sid}/place`]  = PLACES[placeIdx];
     });
   });
   db.ref().update(updates).then(()=>alert(`자동 배정 완료! ${Object.keys(timeGroups).reduce((s,k)=>s+timeGroups[k].length,0)}명 배정되었습니다.`));
@@ -1167,7 +1169,7 @@ function showChipModal(sid,tk){
 }
 function removeAssignment(){
   if(!modalCtx) return;
-  dbRef(`applicants/${modalCtx.sid}/asgn`).set('').then(closeModal);
+  dbRef(`interview/applicants/${modalCtx.sid}/asgn`).set('').then(closeModal);
 }
 function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); modalCtx=null; }
 
@@ -1197,12 +1199,12 @@ function initMode(){
     tb.innerHTML=`
       <button class="ttab active" id="tab-admin" onclick="goPage('admin',this)">관리자 대시보드</button>
       <button class="ttab" id="tab-schedule" onclick="goPage('schedule',this)">시간표 보기</button>`;
-    goPage('admin', document.getElementById('tab-admin'));
+    goPage('admin', tb.querySelector('#tab-admin'));
   } else {
     document.getElementById('topbar-title').textContent = '모의면접 신청';
     badge.textContent='학생 모드'; badge.className='mode-badge mode-student';
     tb.innerHTML=`<button class="ttab active" id="tab-apply" onclick="goPage('apply',this)">지원자 등록</button>`;
-    goPage('apply', document.getElementById('tab-apply'));
+    goPage('apply', tb.querySelector('#tab-apply'));
   }
 }
 function goPage(id,btn){
@@ -1220,6 +1222,8 @@ document.addEventListener('DOMContentLoaded', function(){
   initMode();
   renderCal();
   renderTimeTags();
+  // Firebase 로드 전에도 UI는 보이게 — loading-box는 작은 안내 메시지만
+  document.getElementById('loading-box').style.cssText = 'display:block;font-size:12px;color:#888;padding:4px 0;margin-bottom:8px;background:none;border:none;text-align:left;';
   initFirebase();
 });
 </script>
