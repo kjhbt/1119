@@ -314,12 +314,8 @@ table.data-tbl tr:hover td{background:#fafaf8;}
       <div class="form-grid">
         <div class="fg"><label>이름 *</label><input type="text" id="t-name" placeholder="홍길동"></div>
         <div class="fg"><label>담당 과목 *</label><input type="text" id="t-subj" placeholder="예: 국어, 수학"></div>
-        <div class="fg"><label>담당 학급 *</label><input type="text" id="t-cls" placeholder="예: 9 (반 번호만, 부장이면 '부장')"></div>
-        <div class="fg"><label>역할</label>
-          <select id="t-role">
-            <option value="">일반</option>
-            <option value="부장">부장</option>
-          </select>
+        <div class="fg" style="grid-column:1/-1"><label>담당 학급 * <span style="font-weight:400;font-size:11px;color:#888;">(반 번호 입력. 부장이면 '부장')</span></label>
+          <input type="text" id="t-cls" placeholder="예: 9  또는  부장">
         </div>
       </div>
       <button class="btn btn-p" onclick="submitTeacher()">등록</button>
@@ -552,7 +548,7 @@ function renderCal(){
     const k    = dateKey(calYear,calMonth,d);
     const wk   = dow===0||dow===6;
     const past = dt < new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-    const blocked = !!BD[k.replaceAll('-','_')];
+    const blocked = !!BD[k.replaceAll('-','')];
     const ps   = selTimes[k]||[];
     let cls    = 'cday';
     if(wk||past) cls += ' dis';
@@ -641,14 +637,12 @@ function submitTeacher(){
   const name = document.getElementById('t-name').value.trim();
   const subj = document.getElementById('t-subj').value.trim();
   const cls  = document.getElementById('t-cls').value.trim();
-  const role = document.getElementById('t-role').value;
   if(!name||!subj||!cls){ alert('모든 항목을 입력해 주세요.'); return; }
+  const role = cls === '부장' ? '부장' : '';
+  const order = role === '부장' ? 0 : (parseInt(cls)||999);
   const id = 't_'+Date.now();
-  // 순번: 부장=0, 나머지=반번호(숫자) 기준
-  const order = role==='부장' ? 0 : (parseInt(cls)||999);
   dbRef(`teachers/${id}`).set({id, name, subj, cls, role, order}).then(()=>{
     ['t-name','t-subj','t-cls'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('t-role').value='';
     flash('t-ok');
   });
 }
@@ -707,17 +701,15 @@ function addBlockedDate(){
   const raw = document.getElementById('bd-date').value;
   const reason = document.getElementById('bd-reason').value.trim();
   if(!raw){ alert('날짜를 선택해 주세요.'); return; }
-  // Firebase 키: YYYY-MM-DD에서 - 를 _ 로 변환 (Firebase 키에 . $ # [ ] / 불가)
-  const key = raw.replaceAll('-','_');
+  // 키: YYYYMMDD (숫자만, Firebase 키 제약 없음)
+  const key = raw.replaceAll('-','');
   dbRef(`blocked_dates/${key}`).set({
-    date: raw, reason: reason||'', addedAt: Date.now()
+    date: raw, key, reason: reason||'', addedAt: Date.now()
   }).then(()=>{
     document.getElementById('bd-date').value = '';
     document.getElementById('bd-reason').value = '';
     flash('bd-ok');
-  }).catch(e=>{
-    alert('저장 실패: ' + e.message);
-  });
+  }).catch(e=>alert('저장 실패: ' + e.message));
 }
 
 function removeBlockedDate(key){
@@ -758,7 +750,7 @@ function renderBdCal(){
     const k    = dateKey(bdCalYear,bdCalMonth,d);
     const wk   = dow===0||dow===6;
     const past = dt < new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-    const blocked = !!BD[k.replaceAll('-','_')];
+    const blocked = !!BD[k.replaceAll('-','')];
     let cls = 'cday';
     if(blocked) cls += ' blocked';
     else if(wk||past) cls += ' dis';
