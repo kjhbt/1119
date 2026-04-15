@@ -19,8 +19,8 @@ const FIREBASE_CONFIG = {
 };
 </script>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/compat/app/dist/index.browser.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/compat/database/dist/index.browser.js"></script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -810,20 +810,22 @@ function initMode(){
     document.getElementById('topbar-title').textContent = '모의면접 관리자';
     badge.textContent='관리자 모드'; badge.className='mode-badge mode-admin';
     tb.innerHTML=`
-      <button class="ttab active" onclick="goPage('admin',this)">관리자 대시보드</button>
-      <button class="ttab" onclick="goPage('schedule',this)">시간표 보기</button>`;
-    goPage('admin', tb.firstChild);
+      <button class="ttab active" id="tab-admin" onclick="goPage('admin',this)">관리자 대시보드</button>
+      <button class="ttab" id="tab-schedule" onclick="goPage('schedule',this)">시간표 보기</button>`;
+    goPage('admin', document.getElementById('tab-admin'));
   } else {
     document.getElementById('topbar-title').textContent = '모의면접 신청';
     badge.textContent='학생 모드'; badge.className='mode-badge mode-student';
-    tb.innerHTML=`<button class="ttab active" onclick="goPage('apply',this)">지원자 등록</button>`;
-    goPage('apply', tb.firstChild);
+    tb.innerHTML=`<button class="ttab active" id="tab-apply" onclick="goPage('apply',this)">지원자 등록</button>`;
+    goPage('apply', document.getElementById('tab-apply'));
   }
 }
 function goPage(id,btn){
-  document.querySelectorAll('.ttab').forEach(t=>t.classList.remove('active')); btn?.classList.add('active');
+  document.querySelectorAll('.ttab').forEach(t=>t.classList.remove('active'));
+  if(btn && btn.classList) btn.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  const pg = document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
   if(id==='admin'){ syncAdminFilters(); renderStudentList(); updateStats(); }
   if(id==='schedule'){ renderSchView(); }
 }
@@ -836,3 +838,4 @@ loadData();
 </script>
 </body>
 </html>
+
