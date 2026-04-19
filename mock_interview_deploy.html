@@ -201,6 +201,9 @@ table.data-tbl tr:hover td{background:#fafaf8;}
           <option>기타</option>
         </select>
       </div>
+      <div class="fg"><label>지원 학교명 *</label><input type="text" id="f-school" placeholder="예: 서울대학교"></div>
+      <div class="fg"><label>지원 학과 *</label><input type="text" id="f-major" placeholder="예: 의학과"></div>
+      <div class="fg" style="grid-column:1/-1"><label>가장 빠른 면접 날짜 *</label><input type="date" id="f-interview-date"></div>
     </div>
 
     <!-- MMI 비고 -->
@@ -227,8 +230,6 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <button class="cnt-btn" onclick="changeCnt(1)">+</button>
         <span style="font-size:12px;color:#888;">회 신청</span>
       </div>
-      <!-- 대학별 정보 탭 -->
-      <div id="univ-tabs-area"></div>
     </div>
 
     <!-- 가능 날짜/교시 -->
@@ -280,9 +281,9 @@ table.data-tbl tr:hover td{background:#fafaf8;}
   </div>
   <div class="section-sub">
     <button class="stab active" onclick="switchSub('students',this)">지원자 관리</button>
-    <button class="stab" onclick="switchSub('slots',this)">면접 슬롯</button>
+    <button class="stab" onclick="switchSub('teachers',this)">선생님 등록</button>
     <button class="stab" onclick="switchSub('assign',this)">시간 배정</button>
-    <button class="stab" onclick="switchSub('teachers',this)">선생님 관리</button>
+    <button class="stab" onclick="switchSub('slots',this)">모의면접 설정</button>
     <button class="stab" onclick="switchSub('blocked',this)">신청 불가 날짜</button>
   </div>
 
@@ -314,37 +315,64 @@ table.data-tbl tr:hover td{background:#fafaf8;}
     </div>
   </div>
 
-  <!-- 면접 슬롯 관리 -->
+  <!-- 모의면접 설정 -->
   <div class="sub-sec" id="sub-slots">
+    <!-- 시간대 설정 -->
     <div class="card">
-      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 슬롯 설정</div>
-      <p style="font-size:12px;color:#888;margin-bottom:14px;">날짜·교시를 등록하면 학생들이 해당 시간을 선택할 수 있습니다. 장소 수 = 해당 교시 최대 배정 인원.</p>
-      <div class="form-grid">
-        <div class="fg"><label>날짜 *</label><input type="date" id="sl-date"></div>
-        <div class="fg">
-          <label>교시 *</label>
-          <select id="sl-period">
-            <option value="">선택</option>
-            <option value="8">8교시</option>
-            <option value="9">9교시</option>
-          </select>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 시간대 설정</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">학생들이 선택할 수 있는 시간대를 등록합니다. (예: 10:00, 10:30)</p>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">
+        <div class="fg" style="flex:1;min-width:120px;">
+          <label>시간 *</label>
+          <input type="time" id="sl-time" placeholder="예: 10:00">
         </div>
-        <div class="fg">
-          <label>최대 인원 * <span style="font-weight:400;font-size:11px;color:#888;">(장소 수 = 동시 배정 가능 인원)</span></label>
-          <input type="number" id="sl-max" min="1" max="20" value="4" placeholder="4">
+        <div class="fg" style="flex:1;min-width:120px;">
+          <label>레이블 (선택)</label>
+          <input type="text" id="sl-time-label" placeholder="예: 8교시, 오전 1번">
         </div>
-        <div class="fg">
-          <label>메모 (선택)</label>
-          <input type="text" id="sl-memo" placeholder="예: 본관 3층">
-        </div>
+        <button class="btn btn-p" onclick="addTimeSlot()" style="white-space:nowrap;">추가</button>
       </div>
-      <button class="btn btn-p" onclick="addSlot()">슬롯 추가</button>
-      <div class="sbanner" id="sl-ok">슬롯이 등록되었습니다.</div>
+      <div class="sbanner" id="sl-time-ok">시간대가 등록되었습니다.</div>
+      <div id="time-slot-list" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
+
+    <!-- 장소 설정 -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 장소 설정</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">면접이 진행되는 장소를 등록합니다. 장소 수 = 동시 배정 가능 인원.</p>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">
+        <div class="fg" style="flex:1;min-width:200px;">
+          <label>장소명 *</label>
+          <input type="text" id="sl-place" placeholder="예: 진학상담실, 3학년 9반 교실">
+        </div>
+        <button class="btn btn-p" onclick="addPlaceSlot()" style="white-space:nowrap;">추가</button>
+      </div>
+      <div class="sbanner" id="sl-place-ok">장소가 등록되었습니다.</div>
+      <div id="place-slot-list" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- 날짜 기간 설정 -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 가능 기간 설정</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">기간을 지정하면 해당 기간의 평일마다 등록된 시간대·장소가 자동으로 연결됩니다.</p>
+      <div class="form-grid">
+        <div class="fg"><label>시작 날짜 *</label><input type="date" id="sl-start"></div>
+        <div class="fg"><label>종료 날짜 *</label><input type="date" id="sl-end"></div>
+      </div>
+      <div style="font-size:12px;color:#666;margin-bottom:8px;">※ 주말 및 신청 불가 날짜는 자동으로 제외됩니다.</div>
+      <button class="btn btn-p" onclick="applyDateRange()">기간 적용</button>
+      <div class="sbanner" id="sl-range-ok">기간이 적용되었습니다.</div>
+    </div>
+
+    <!-- 등록된 슬롯 목록 -->
     <div class="card" style="padding:0 20px;">
-      <div style="font-size:13px;font-weight:600;padding:10px 0 6px;">등록된 슬롯</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;">
+        <div style="font-size:13px;font-weight:600;">등록된 슬롯</div>
+        <button class="btn btn-d" style="font-size:11px;padding:3px 10px;" onclick="clearAllSlots()">전체 삭제</button>
+      </div>
       <div id="slot-list" style="padding:0 0 8px;"></div>
     </div>
+
     <!-- 최대 횟수 설정 -->
     <div class="card">
       <div style="font-size:14px;font-weight:600;margin-bottom:10px;">모의면접 최대 신청 횟수</div>
@@ -368,8 +396,8 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <div class="fg"><label>이름 *</label><input type="text" id="t-name" placeholder="홍길동"></div>
         <div class="fg"><label>담당 과목 *</label><input type="text" id="t-subj" placeholder="예: 국어, 수학"></div>
         <div class="fg" style="grid-column:1/-1">
-          <label>담당 학급 * <span style="font-weight:400;font-size:11px;color:#888;">(반 번호 입력. 부장이면 '부장')</span></label>
-          <input type="text" id="t-cls" placeholder="예: 9  또는  부장">
+          <label>담당 학급 * <span style="font-weight:400;font-size:11px;color:#888;">(숫자 입력 시 '○반 담임', 글자 입력 시 해당 직책으로 표시. 예: 6 → 6반 담임, 부장 → 부장 선생님)</span></label>
+          <input type="text" id="t-cls" placeholder="예: 6  또는  부장  또는  상담">
         </div>
         <div class="fg" style="grid-column:1/-1">
           <label>면접 불가 요일 <span style="font-weight:400;font-size:11px;color:#888;">(해당 요일에는 교사 배치 불가)</span></label>
@@ -525,7 +553,6 @@ let weekOffset=0, schWeekOffset=0, taWeekOffset=0;
 let dragStudentId=null, modalCtx=null;
 let db, curMode;
 let appCnt=1, maxCnt=3;
-let univInfos={}; // {1:{school,major,interviewDate}, 2:{...}}
 
 // ── Firebase ──────────────────────────────────────────
 function initFirebase(){
@@ -551,10 +578,14 @@ function loadData(){
   dbRef('settings').on('value',snap=>{
     SETTINGS=snap.val()||{};
     maxCnt=SETTINGS.maxCnt||3;
-    document.getElementById('max-cnt-label').textContent=maxCnt;
-    document.getElementById('cur-max-cnt').textContent=maxCnt;
-    document.getElementById('max-cnt-input').value=maxCnt;
-    updateUnivTabs();
+    const el1=document.getElementById('max-cnt-label');
+    const el2=document.getElementById('cur-max-cnt');
+    const el3=document.getElementById('max-cnt-input');
+    if(el1)el1.textContent=maxCnt;
+    if(el2)el2.textContent=maxCnt;
+    if(el3)el3.value=maxCnt;
+    renderTimeSlotList();
+    renderPlaceSlotList();
   });
 }
 
@@ -583,18 +614,22 @@ function parseTimeKey(tk){ const[dk,p]=tk.split('_');return{dk,p:+p,label:`${dat
 function slotKey(date,period){ return`${date.replaceAll('-','')}_${period}`; }
 
 // ── 슬롯 헬퍼 ─────────────────────────────────────────
-function getSlot(dateK,period){
-  const k=slotKey(dateK,period);
-  return SLOTS[k]||null;
+// 슬롯 키: YYYYMMDD_ts_HHMM
+function getSlotsForDate(dateK){
+  return Object.values(SLOTS).filter(s=>s.date===dateK);
 }
-function getSlotUsed(dateK,period){
-  const tk=timeKey(dateK,period);
+function getSlot(dateK,tk){ // tk = 전체 슬롯 key
+  return SLOTS[tk]||null;
+}
+function getSlotUsed(slot){
+  if(!slot)return 0;
+  return Object.values(AP).filter(a=>a.asgn===slot.key).length;
+}
+function getSlotUsedByKey(tk){
   return Object.values(AP).filter(a=>a.asgn===tk).length;
 }
-function isSlotFull(dateK,period){
-  const slot=getSlot(dateK,period);
-  if(!slot) return true;
-  return getSlotUsed(dateK,period)>=(slot.max||PLACES.length);
+function getPlaces(){
+  return Object.values(SETTINGS.places||{}).sort((a,b)=>a.order-b.order);
 }
 
 // ── 달력 ──────────────────────────────────────────────
@@ -612,19 +647,18 @@ function renderCal(){
     const wk=dow===0||dow===6;
     const past=dt<new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
     const blocked=!!BD[k.replaceAll('-','')];
-    // 이 날짜에 슬롯이 있는지 확인
-    const has8=getSlot(k,8), has9=getSlot(k,9);
-    const hasSlot=has8||has9;
-    const ps=selTimes[k]||[];
+    const daySlots=getSlotsForDate(k);
+    const hasSlot=daySlots.length>0;
+    const selKeys=selTimes[k]||[];
     let cls='cday';
-    if(wk||past||blocked) cls+=' dis';
+    if(wk||past) cls+=' dis';
+    else if(blocked) cls=' cday blocked';
     else if(!hasSlot) cls+=' no-slot dis';
     else{ cls+=' has-slot'; if(dow===0) cls+=' sun'; if(dow===6) cls+=' sat'; }
-    if(blocked) cls=' cday blocked';
     if(k===todK) cls+=' tod';
-    if(ps.length>0||focusDate===k) cls+=' sel';
+    if(selKeys.length>0||focusDate===k) cls+=' sel';
     const click=(wk||past||blocked||!hasSlot)?'':`onclick="selectDate('${k}')"`;
-    const pTag=ps.length?`<span class="ptag">${ps.map(x=>x+'교').join('·')}</span>`:'';
+    const pTag=selKeys.length?`<span class="ptag">${selKeys.length}개</span>`:'';
     const bTag=blocked?`<span class="ptag" style="color:#A32D2D;">불가</span>`:'';
     h+=`<div class="${cls}" ${click}>${d}${bTag}${pTag}</div>`;
   }
@@ -634,7 +668,7 @@ function calPrev(){ calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal()
 function calNext(){ calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal(); }
 
 function selectDate(k){
-  focusDate=k;renderCal();
+  focusDate=k; renderCal();
   document.getElementById('period-sec').style.display='block';
   document.getElementById('sel-date-lbl').textContent=dateLabel(k);
   renderPeriodBtns(k);
@@ -642,86 +676,59 @@ function selectDate(k){
 
 function renderPeriodBtns(k){
   const container=document.getElementById('period-btns');
-  const ps=selTimes[k]||[];
+  const daySlots=getSlotsForDate(k).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const selKeys=selTimes[k]||[];
+  if(!daySlots.length){container.innerHTML='<span style="font-size:12px;color:#888;">이 날짜에 등록된 시간이 없습니다.</span>';return;}
   let h='';
-  [8,9].forEach(p=>{
-    const slot=getSlot(k,p);
-    if(!slot){ return; } // 슬롯 없으면 안 보임
-    const used=getSlotUsed(k,p);
-    const max=slot.max||PLACES.length;
-    const full=used>=max&&!ps.includes(p);
+  daySlots.forEach(slot=>{
+    const used=getSlotUsedByKey(slot.key);
+    const max=slot.max;
+    const selected=selKeys.includes(slot.key);
+    const full=used>=max&&!selected;
     let cls='pbtn';
-    if(ps.includes(p)) cls+=' on';
+    if(selected) cls+=' on';
     else if(full) cls+=' full';
-    h+=`<button class="${cls}" onclick="toggleP(${p})" ${full?'disabled':''}>${p}교시<span class="slot-count">(${used}/${max})</span></button>`;
+    h+=`<button class="${cls}" onclick="toggleSlot('${k}','${slot.key}')" ${full?'disabled':''}>${slot.label||slot.time}<span class="slot-count">(${used}/${max})</span></button>`;
   });
-  if(!h) h='<span style="font-size:12px;color:#888;">이 날짜에 등록된 교시가 없습니다.</span>';
   container.innerHTML=h;
 }
 
-function toggleP(p){
-  if(!focusDate)return;
-  if(!selTimes[focusDate])selTimes[focusDate]=[];
-  const a=selTimes[focusDate],i=a.indexOf(p);
-  if(i>=0)a.splice(i,1);
-  else{
-    const slot=getSlot(focusDate,p);
-    if(!slot)return;
-    a.push(p);
-  }
-  a.sort();
-  if(!a.length)delete selTimes[focusDate];
-  renderPeriodBtns(focusDate);
-  renderTimeTags();renderCal();
+function toggleSlot(dateK, slotK){
+  if(!selTimes[dateK]) selTimes[dateK]=[];
+  const arr=selTimes[dateK];
+  const idx=arr.indexOf(slotK);
+  if(idx>=0) arr.splice(idx,1);
+  else arr.push(slotK);
+  if(!arr.length) delete selTimes[dateK];
+  renderPeriodBtns(dateK);
+  renderTimeTags(); renderCal();
 }
-function removeTime(k,p){
+
+function toggleP(p){ /* 구버전 호환 */ }
+
+function removeTime(k,slotK){
   if(!selTimes[k])return;
-  selTimes[k]=selTimes[k].filter(x=>x!==p);
+  selTimes[k]=selTimes[k].filter(x=>x!==slotK);
   if(!selTimes[k].length){delete selTimes[k];if(focusDate===k)document.getElementById('period-sec').style.display='none';}
   if(focusDate===k) renderPeriodBtns(k);
-  renderTimeTags();renderCal();
+  renderTimeTags(); renderCal();
 }
+
 function renderTimeTags(){
   const keys=Object.keys(selTimes).sort();
   const el=document.getElementById('time-tags');
   if(!keys.length){el.innerHTML='<span style="font-size:12px;color:#888;">선택된 시간 없음</span>';return;}
-  el.innerHTML=keys.flatMap(k=>(selTimes[k]||[]).map(p=>`<span class="ttag">${dateLabel(k)} ${p}교시<button onclick="removeTime('${k}',${p})">×</button></span>`)).join('');
+  el.innerHTML=keys.flatMap(k=>(selTimes[k]||[]).map(slotK=>{
+    const slot=SLOTS[slotK];
+    const lbl=slot?`${dateLabel(k)} ${slot.label||slot.time}`:slotK;
+    return`<span class="ttag">${lbl}<button onclick="removeTime('${k}','${slotK}')">×</button></span>`;
+  })).join('');
 }
 
-// ── 면접 횟수 & 대학 탭 ──────────────────────────────
+// ── 면접 횟수 ─────────────────────────────────────────
 function changeCnt(d){
   appCnt=Math.max(1,Math.min(maxCnt,appCnt+d));
   document.getElementById('cnt-display').textContent=appCnt;
-  updateUnivTabs();
-}
-function updateUnivTabs(){
-  const area=document.getElementById('univ-tabs-area');
-  if(!area)return;
-  let tabHtml='<div class="univ-tabs-wrap" id="univ-tab-btns">';
-  for(let i=1;i<=appCnt;i++) tabHtml+=`<button class="univ-tab${i===1?' active':''}" onclick="selectUnivTab(${i})">${i}회차</button>`;
-  tabHtml+='</div><div id="univ-tab-content"></div>';
-  area.innerHTML=tabHtml;
-  renderUnivTabContent(1);
-}
-function selectUnivTab(n){
-  document.querySelectorAll('.univ-tab').forEach((t,i)=>t.classList.toggle('active',i===n-1));
-  renderUnivTabContent(n);
-}
-function renderUnivTabContent(n){
-  const info=univInfos[n]||{};
-  document.getElementById('univ-tab-content').innerHTML=`
-    <div class="form-grid" style="margin-top:8px;">
-      <div class="fg"><label>${n}회차 학교명</label><input type="text" id="ui-school-${n}" placeholder="예: 서울대학교" value="${info.school||''}" oninput="saveUnivInfo(${n})"></div>
-      <div class="fg"><label>${n}회차 전공</label><input type="text" id="ui-major-${n}" placeholder="예: 의학과" value="${info.major||''}" oninput="saveUnivInfo(${n})"></div>
-      <div class="fg" style="grid-column:1/-1"><label>${n}회차 면접 날짜 (실제 대학 면접일)</label><input type="date" id="ui-date-${n}" value="${info.interviewDate||''}" oninput="saveUnivInfo(${n})"></div>
-    </div>`;
-}
-function saveUnivInfo(n){
-  univInfos[n]={
-    school: document.getElementById(`ui-school-${n}`)?.value||'',
-    major:  document.getElementById(`ui-major-${n}`)?.value||'',
-    interviewDate: document.getElementById(`ui-date-${n}`)?.value||''
-  };
 }
 
 // ── 면접 유형 변경 ────────────────────────────────────
@@ -737,23 +744,22 @@ function submitApply(){
   const name=document.getElementById('f-name').value.trim();
   const dept=document.getElementById('f-dept').value.trim();
   const type=document.getElementById('f-type').value;
+  const school=document.getElementById('f-school')?.value.trim()||'';
+  const major=document.getElementById('f-major')?.value.trim()||'';
+  const interviewDate=document.getElementById('f-interview-date')?.value||'';
   const intro=document.getElementById('f-intro').value.trim();
   const timesObj={};
   Object.keys(selTimes).forEach(k=>{if(selTimes[k].length)timesObj[k]=selTimes[k];});
 
   if(!sid||!name||!dept||!type){showErr('apply-err','필수 항목을 모두 입력해 주세요.');return;}
+  if(!school){showErr('apply-err','지원 학교명을 입력해 주세요.');return;}
+  if(!major){showErr('apply-err','지원 학과를 입력해 주세요.');return;}
+  if(!interviewDate){showErr('apply-err','가장 빠른 면접 날짜를 입력해 주세요.');return;}
   if(!/^\d{4,5}$/.test(sid)){showErr('apply-err','학번은 4~5자리 숫자여야 합니다.');return;}
   if(!parseSid(sid)){showErr('apply-err','올바른 학번 형식이 아닙니다.');return;}
   if(!Object.keys(timesObj).length){showErr('apply-err','가능한 날짜와 교시를 선택해 주세요.');return;}
   if(type==='MMI'&&(!document.getElementById('f-mmi-school').value.trim()||!document.getElementById('f-mmi-subject').value.trim())){showErr('apply-err','MMI 학교명과 과목명을 입력해 주세요.');return;}
   if(type==='대학 자체 질문'&&!document.getElementById('f-univ-q').value.trim()){showErr('apply-err','대학교 자체 질문을 입력해 주세요.');return;}
-
-  // 대학별 정보 수집
-  const univData={};
-  for(let i=1;i<=appCnt;i++){
-    saveUnivInfo(i);
-    univData[i]=univInfos[i]||{};
-  }
 
   const extra={};
   if(type==='MMI'){ extra.mmiSchool=document.getElementById('f-mmi-school').value.trim(); extra.mmiSubject=document.getElementById('f-mmi-subject').value.trim(); }
@@ -763,10 +769,11 @@ function submitApply(){
     if(snap.exists()){showErr('apply-err','이미 등록된 학번입니다.');return;}
     dbRef(`applicants/${sid}`).set({
       sid,name,dept,type,times:timesObj,intro,
-      appCnt,univData,extra,
+      school,major,interviewDate,
+      appCnt,extra,
       asgn:'',place:'',registeredAt:Date.now()
     }).then(()=>{
-      ['f-sid','f-name','f-dept','f-intro','f-mmi-school','f-mmi-subject','f-univ-q'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      ['f-sid','f-name','f-dept','f-intro','f-mmi-school','f-mmi-subject','f-univ-q','f-school','f-major','f-interview-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       document.getElementById('f-type').value='';
       document.getElementById('sid-hint').textContent='';
       document.getElementById('mmi-extra').style.display='none';
@@ -774,45 +781,108 @@ function submitApply(){
       selTimes={};focusDate=null;
       document.getElementById('period-sec').style.display='none';
       appCnt=1;document.getElementById('cnt-display').textContent=1;
-      univInfos={};updateUnivTabs();
       renderTimeTags();renderCal();flash('apply-ok');
     }).catch(e=>showErr('apply-err','저장 실패: '+e.message));
   });
 }
 
-// ── 슬롯 관리 ─────────────────────────────────────────
-function addSlot(){
-  const date=document.getElementById('sl-date').value;
-  const period=document.getElementById('sl-period').value;
-  const max=parseInt(document.getElementById('sl-max').value)||PLACES.length;
-  const memo=document.getElementById('sl-memo').value.trim();
-  if(!date||!period){alert('날짜와 교시를 선택해 주세요.');return;}
-  const k=slotKey(date,period);
-  dbRef(`slots/${k}`).set({date,period:+period,max,memo,key:k}).then(()=>{
-    document.getElementById('sl-date').value='';
-    document.getElementById('sl-period').value='';
-    document.getElementById('sl-memo').value='';
-    flash('sl-ok');
+// ── 모의면접 설정 (시간/장소/슬롯) ──────────────────────
+function addTimeSlot(){
+  const time=document.getElementById('sl-time').value;
+  const label=document.getElementById('sl-time-label').value.trim();
+  if(!time){alert('시간을 입력해 주세요.');return;}
+  const key='ts_'+time.replace(':','');
+  dbRef(`settings/times/${key}`).set({time,label:label||time,key}).then(()=>{
+    document.getElementById('sl-time').value='';
+    document.getElementById('sl-time-label').value='';
+    flash('sl-time-ok');
   });
 }
-function delSlot(k){ if(confirm('슬롯을 삭제하시겠습니까?')) dbRef(`slots/${k}`).remove(); }
-function renderSlotList(){
-  const el=document.getElementById('slot-list');
-  if(!el)return;
-  const list=Object.values(SLOTS).sort((a,b)=>a.date.localeCompare(b.date)||a.period-b.period);
-  if(!list.length){el.innerHTML='<p style="font-size:13px;color:#888;padding:8px 0;">등록된 슬롯이 없습니다.</p>';return;}
-  el.innerHTML=list.map(s=>{
-    const used=getSlotUsed(s.date,s.period);
-    const full=used>=s.max;
-    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
-      <span><span style="font-weight:600;">${dateLabel(s.date)} ${s.period}교시</span> <span style="font-size:11px;color:#888;">최대 ${s.max}명${s.memo?' · '+s.memo:''}</span></span>
-      <span style="display:flex;align-items:center;gap:8px;">
-        <span class="slot-chip ${full?'full':'avail'}">${used}/${s.max}</span>
-        <button class="btn btn-d" style="padding:3px 8px;font-size:11px;" onclick="delSlot('${s.key}')">삭제</button>
-      </span>
-    </div>`;
-  }).join('');
+function delTimeSlot(key){ dbRef(`settings/times/${key}`).remove(); }
+
+function addPlaceSlot(){
+  const place=document.getElementById('sl-place').value.trim();
+  if(!place){alert('장소명을 입력해 주세요.');return;}
+  const key='ps_'+Date.now();
+  dbRef(`settings/places/${key}`).set({place,key,order:Date.now()}).then(()=>{
+    document.getElementById('sl-place').value='';
+    flash('sl-place-ok');
+  });
 }
+function delPlaceSlot(key){ dbRef(`settings/places/${key}`).remove(); }
+
+function renderTimeSlotList(){
+  const el=document.getElementById('time-slot-list');if(!el)return;
+  const times=Object.values(SETTINGS.times||{}).sort((a,b)=>a.time.localeCompare(b.time));
+  if(!times.length){el.innerHTML='<span style="font-size:12px;color:#888;">등록된 시간대 없음</span>';return;}
+  el.innerHTML=times.map(t=>`<span style="display:inline-flex;align-items:center;gap:5px;background:#EAF3DE;color:#27500A;border:1px solid #97C459;border-radius:8px;padding:4px 10px;font-size:12px;margin:2px;">
+    ${t.label}
+    <button onclick="delTimeSlot('${t.key}')" style="background:none;border:none;cursor:pointer;color:#3B6D11;font-size:14px;line-height:1;padding:0;">×</button>
+  </span>`).join('');
+}
+function renderPlaceSlotList(){
+  const el=document.getElementById('place-slot-list');if(!el)return;
+  const places=Object.values(SETTINGS.places||{}).sort((a,b)=>a.order-b.order);
+  if(!places.length){el.innerHTML='<p style="font-size:12px;color:#888;">등록된 장소 없음</p>';return;}
+  el.innerHTML=places.map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
+    <span><span style="font-size:11px;color:#aaa;margin-right:8px;">${i+1}</span>${p.place}</span>
+    <button class="btn btn-d" style="padding:3px 8px;font-size:11px;" onclick="delPlaceSlot('${p.key}')">삭제</button>
+  </div>`).join('');
+}
+
+function applyDateRange(){
+  const start=document.getElementById('sl-start').value;
+  const end=document.getElementById('sl-end').value;
+  if(!start||!end){alert('시작·종료 날짜를 모두 선택해 주세요.');return;}
+  if(start>end){alert('시작 날짜가 종료 날짜보다 늦습니다.');return;}
+  const times=Object.values(SETTINGS.times||{}).sort((a,b)=>a.time.localeCompare(b.time));
+  const places=Object.values(SETTINGS.places||{});
+  if(!times.length){alert('먼저 면접 시간대를 등록해 주세요.');return;}
+  if(!places.length){alert('먼저 면접 장소를 등록해 주세요.');return;}
+  const updates={};
+  let cur=new Date(start+'T00:00:00');
+  const endDate=new Date(end+'T00:00:00');
+  while(cur<=endDate){
+    const dow=cur.getDay();
+    if(dow!==0&&dow!==6){
+      const dk=dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate());
+      if(!BD[dk.replaceAll('-','')]){
+        times.forEach(t=>{
+          const k=`${dk.replaceAll('-','')}_${t.key}`;
+          updates[`${DB}/slots/${k}`]={date:dk,timeKey:t.key,time:t.time,label:t.label,max:places.length,key:k};
+        });
+      }
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  if(!Object.keys(updates).length){alert('적용할 날짜가 없습니다.');return;}
+  db.ref().update(updates).then(()=>{flash('sl-range-ok');renderSlotList();renderCal();});
+}
+
+function clearAllSlots(){
+  if(confirm('등록된 슬롯을 모두 삭제하시겠습니까?'))
+    dbRef('slots').remove().then(()=>renderSlotList());
+}
+function addSlot(){ applyDateRange(); }
+function delSlot(k){ if(confirm('슬롯을 삭제하시겠습니까?')) dbRef(`slots/${k}`).remove(); }
+
+function renderSlotList(){
+  const el=document.getElementById('slot-list');if(!el)return;
+  const list=Object.values(SLOTS).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.time||'').localeCompare(String(b.time||'')));
+  if(!list.length){el.innerHTML='<p style="font-size:13px;color:#888;padding:8px 0;">등록된 슬롯이 없습니다.</p>';return;}
+  const groups={};
+  list.forEach(s=>{if(!groups[s.date])groups[s.date]=[];groups[s.date].push(s);});
+  el.innerHTML=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,slots])=>`
+    <div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
+      <span style="font-size:12px;font-weight:600;color:#444;">${dateLabel(date)}</span>
+      <span style="margin-left:8px;">${slots.map(s=>{
+        const used=getSlotUsed(s);
+        const full=used>=s.max;
+        return`<span class="slot-chip ${full?'full':'avail'}" style="margin-right:4px;" onclick="delSlot('${s.key}')" title="클릭하여 삭제">${s.label||s.time} ${used}/${s.max}</span>`;
+      }).join('')}</span>
+    </div>`).join('');
+}
+
 function saveMaxCnt(){
   const v=parseInt(document.getElementById('max-cnt-input').value)||3;
   dbRef('settings/maxCnt').set(v).then(()=>flash('maxcnt-ok'));
@@ -824,8 +894,10 @@ function submitTeacher(){
   const subj=document.getElementById('t-subj').value.trim();
   const cls=document.getElementById('t-cls').value.trim();
   if(!name||!subj||!cls){alert('모든 항목을 입력해 주세요.');return;}
-  const role=cls==='부장'?'부장':'';
-  const order=role==='부장'?0:(parseInt(cls)||999);
+  // 숫자면 반담임, 글자면 직책
+  const isNum=/^\d+$/.test(cls);
+  const role=isNum?`${cls}반 담임`:cls;
+  const order=isNum?(parseInt(cls)||999):(cls==='부장'?0:998);
   const blockedDays=[];
   ['mon','tue','wed','thu','fri'].forEach((d,i)=>{
     if(document.getElementById(`td-${d}`)?.checked) blockedDays.push(i+1);
@@ -842,10 +914,17 @@ function clearAllTeachers(){ if(confirm('모두 삭제하시겠습니까?')) dbR
 
 function sortedTeachers(){
   return Object.values(TC).sort((a,b)=>{
-    const oa=a.role==='부장'?0:(parseInt(a.cls)||999);
-    const ob=b.role==='부장'?0:(parseInt(b.cls)||999);
-    if(oa!==ob)return oa-ob;
-    return(a.id||'').localeCompare(b.id||'');
+    const isNumA=/^\d+$/.test(a.cls), isNumB=/^\d+$/.test(b.cls);
+    // 글자(직책)가 먼저, 그 중 부장/상담 등 순, 숫자(반담임)는 뒤에 번호순
+    if(!isNumA&&isNumB) return -1;
+    if(isNumA&&!isNumB) return 1;
+    if(!isNumA&&!isNumB){
+      // 글자끼리: 부장 최우선
+      if(a.cls==='부장'&&b.cls!=='부장') return -1;
+      if(a.cls!=='부장'&&b.cls==='부장') return 1;
+      return a.cls.localeCompare(b.cls);
+    }
+    return (parseInt(a.cls)||999)-(parseInt(b.cls)||999);
   });
 }
 function getTeacherAssignCount(tid){
@@ -861,9 +940,10 @@ function renderTeachers(){
   </div>`+
   list.map((t,i)=>{
     const count=getTeacherAssignCount(t.id);
-    const roleTag=t.role==='부장'
-      ?`<span style="background:#EEEDFE;color:#3C3489;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:600;">부장</span>`
-      :`<span style="background:#F1EFE8;color:#444441;padding:2px 7px;border-radius:5px;font-size:11px;">${t.cls}반</span>`;
+    const isNum=/^\d+$/.test(t.cls||'');
+    const roleLabel=t.role||(isNum?`${t.cls}반 담임`:t.cls);
+    const isPrimary=t.order===0||t.cls==='부장';
+    const roleTag=`<span style="${isPrimary?'background:#EEEDFE;color:#3C3489;font-weight:600;':'background:#F1EFE8;color:#444441;'}padding:2px 7px;border-radius:5px;font-size:11px;">${roleLabel}</span>`;
     const dayNames=['월','화','수','목','금'];
     const bdStr=(t.blockedDays||[]).map(d=>dayNames[d-1]).join(',') || '-';
     return`<div style="display:grid;grid-template-columns:${COL};gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
@@ -880,7 +960,11 @@ function renderTeachers(){
 
 function syncTeacherSelects(){
   const list=sortedTeachers();
-  const opts='<option value="">선택</option>'+list.map(t=>`<option value="${t.id}">${t.role==='부장'?'[부장] ':''}${t.name} (${t.cls}반)</option>`).join('');
+  const opts='<option value="">선택</option>'+list.map(t=>{
+    const isNum=/^\d+$/.test(t.cls||'');
+    const roleLabel=t.role||(isNum?`${t.cls}반 담임`:t.cls);
+    return`<option value="${t.id}">${t.name} (${roleLabel})</option>`;
+  }).join('');
   document.querySelectorAll('.ap-tsel').forEach(s=>{const v=s.value;s.innerHTML=opts;s.value=v;});
 }
 
@@ -1063,27 +1147,23 @@ function delApplicant(sid){ if(confirm(`${AP[sid]?.name||sid} 지원자를 삭�
 function autoAssign(){
   const unassigned=Object.values(AP).filter(a=>!a.asgn);
   if(!unassigned.length){alert('미배정 학생이 없습니다.');return;}
-  const updates={};
-  // 각 슬롯별 현재 배정 수 카운터
+  const places=getPlaces();
   const slotCounter={};
-  Object.values(AP).filter(a=>a.asgn).forEach(a=>{
-    slotCounter[a.asgn]=(slotCounter[a.asgn]||0)+1;
-  });
-
+  Object.values(AP).filter(a=>a.asgn).forEach(a=>{ slotCounter[a.asgn]=(slotCounter[a.asgn]||0)+1; });
+  const updates={};
   unassigned.forEach(a=>{
-    const timesArr=Object.keys(a.times||{}).flatMap(dk=>(a.times[dk]||[]).map(pe=>timeKey(dk,pe)));
-    // 가능한 시간 중 여유 있는 슬롯 찾기
-    for(const tk of timesArr){
-      const[dk,p]=tk.split('_');
-      const slot=getSlot(dk,+p);
+    // times: {dateK: [slotKey, slotKey, ...]}
+    const slotKeys=Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+    for(const sk of slotKeys){
+      const slot=SLOTS[sk];
       if(!slot)continue;
-      const used=(slotCounter[tk]||0);
+      const used=(slotCounter[sk]||0);
       if(used<slot.max){
-        // 장소 배정: 순환
-        const placeIdx=used%PLACES.length;
-        updates[`${DB}/applicants/${a.sid}/asgn`]=tk;
-        updates[`${DB}/applicants/${a.sid}/place`]=PLACES[placeIdx];
-        slotCounter[tk]=(slotCounter[tk]||0)+1;
+        const placeIdx=used%(places.length||PLACES.length);
+        const place=(places[placeIdx]?.place)||PLACES[placeIdx]||'';
+        updates[`${DB}/applicants/${a.sid}/asgn`]=sk;
+        updates[`${DB}/applicants/${a.sid}/place`]=place;
+        slotCounter[sk]=(slotCounter[sk]||0)+1;
         break;
       }
     }
@@ -1102,23 +1182,29 @@ function renderWcal(){
   const dates=getWeekDates(weekOffset);
   const s=dates[0],e=dates[4];
   document.getElementById('week-label').textContent=`${s.getMonth()+1}/${s.getDate()} - ${e.getMonth()+1}/${e.getDate()}`;
-  let h='<table><thead><tr><th style="width:48px;"></th>';
+  // 이번 주에 해당하는 시간대 모두 수집
+  const allTimes=Object.values(SETTINGS.times||{}).sort((a,b)=>a.time.localeCompare(b.time));
+  if(!allTimes.length){
+    document.getElementById('wcal').innerHTML='<p style="padding:12px;font-size:13px;color:#888;">면접 시간대를 먼저 등록해 주세요.</p>';
+    return;
+  }
+  let h='<table><thead><tr><th style="width:72px;"></th>';
   dates.forEach(d=>h+=`<th>${d.getMonth()+1}/${d.getDate()}<br><span style="font-weight:400;font-size:10px;">${WDAYS[d.getDay()]}</span></th>`);
   h+='</tr></thead><tbody>';
-  [8,9].forEach(p=>{
-    h+=`<tr><td class="plbl">${p}교시</td>`;
+  allTimes.forEach(t=>{
+    h+=`<tr><td class="plbl" style="font-size:10px;">${t.label||t.time}</td>`;
     dates.forEach(d=>{
       const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
-      const tk=timeKey(dk,p);
-      const slot=getSlot(dk,p);
-      const used=getSlotUsed(dk,p);
-      const max=slot?.max||PLACES.length;
-      const chips=Object.values(AP).filter(a=>a.asgn===tk).map(a=>`
-        <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${tk}')">
+      const slotK=`${dk.replaceAll('-','')}_${t.key}`;
+      const slot=SLOTS[slotK];
+      const used=getSlotUsedByKey(slotK);
+      const max=slot?.max||0;
+      const chips=slot?Object.values(AP).filter(a=>a.asgn===slotK).map(a=>`
+        <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
           ${a.name}${a.place?`<br><span style="font-size:9px;opacity:.8;">${a.place}</span>`:''}
-        </div>`).join('');
-      const slotInfo=slot?`<div style="font-size:9px;color:#888;margin-bottom:2px;">${used}/${max}명</div>`:'';
-      h+=`<td><div class="drop-zone" data-tk="${tk}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${tk}')" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)">${slotInfo}${chips}</div></td>`;
+        </div>`).join(''):'';
+      const slotInfo=slot?`<div style="font-size:9px;color:#888;margin-bottom:2px;">${used}/${max}명</div>`:'<div style="font-size:9px;color:#ddd;">슬롯없음</div>';
+      h+=`<td><div class="drop-zone" data-sk="${slotK}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${slotK}')" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)">${slotInfo}${chips}</div></td>`;
     });
     h+='</tr>';
   });
@@ -1135,11 +1221,12 @@ function renderSidebar(){
   const el=document.getElementById('sidebar-list');
   if(!unassigned.length){el.innerHTML='<p style="font-size:12px;color:#888;padding:8px;">미배정 학생 없음</p>';return;}
   el.innerHTML=unassigned.sort((a,b)=>a.sid.localeCompare(b.sid)).map(a=>{
-    const timesArr=Object.keys(a.times||{}).flatMap(dk=>(a.times[dk]||[]).map(pe=>({label:`${dateLabel(dk)} ${pe}교시`})));
+    const slotKeys=Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+    const labels=slotKeys.slice(0,2).map(sk=>{const s=SLOTS[sk];return s?`${dateLabel(s.date)} ${s.label||s.time}`:sk;});
     return`<div class="sc-card" draggable="true" data-sid="${a.sid}" ondragstart="onDragStart(event,'${a.sid}')">
       <div class="sc-name">${a.name}</div>
       <div class="sc-sub">${a.sid} · <span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}" style="font-size:10px;">${a.type}</span></div>
-      <div class="sc-sub" style="margin-top:2px;">${timesArr.slice(0,2).map(t=>t.label).join(', ')}${timesArr.length>2?'…':''}</div>
+      <div class="sc-sub" style="margin-top:2px;">${labels.join(', ')}${slotKeys.length>2?'…':''}</div>
     </div>`;
   }).join('');
 }
@@ -1148,22 +1235,22 @@ function onDragStart(e,sid){dragStudentId=sid;e.currentTarget.classList.add('dra
 function onDragOver(e){e.preventDefault();}
 function onDragEnter(e){e.currentTarget.classList.add('over');}
 function onDragLeave(e){e.currentTarget.classList.remove('over');}
-function onDrop(e,tk){
+function onDrop(e,sk){
   e.preventDefault();e.currentTarget.classList.remove('over');
   if(!dragStudentId)return;
   const a=AP[dragStudentId];
   if(!a){dragStudentId=null;return;}
-  const[dk,p]=tk.split('_');
-  const timesArr=Object.keys(a.times||{}).flatMap(dk2=>(a.times[dk2]||[]).map(pe=>timeKey(dk2,pe)));
-  if(!timesArr.includes(tk)){alert('해당 학생이 선택한 가능 시간이 아닙니다.');dragStudentId=null;return;}
-  // 슬롯 최대 인원 확인
-  const slot=getSlot(dk,+p);
-  const used=getSlotUsed(dk,+p);
+  const allSlotKeys=Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+  if(!allSlotKeys.includes(sk)){alert('해당 학생이 선택한 가능 시간이 아닙니다.');dragStudentId=null;return;}
+  const slot=SLOTS[sk];
+  const used=getSlotUsedByKey(sk);
   if(slot&&used>=slot.max){alert(`이 시간대는 최대 ${slot.max}명까지만 배정 가능합니다.`);dragStudentId=null;return;}
-  const placeIdx=used%PLACES.length;
+  const places=getPlaces();
+  const placeIdx=used%(places.length||PLACES.length);
+  const place=(places[placeIdx]?.place)||PLACES[placeIdx]||'';
   db.ref().update({
-    [`${DB}/applicants/${dragStudentId}/asgn`]:tk,
-    [`${DB}/applicants/${dragStudentId}/place`]:PLACES[placeIdx]
+    [`${DB}/applicants/${dragStudentId}/asgn`]:sk,
+    [`${DB}/applicants/${dragStudentId}/place`]:place
   }).then(()=>{dragStudentId=null;});
 }
 
@@ -1223,24 +1310,27 @@ function schWeekPrev(){schWeekOffset--;renderSchView();}
 function schWeekNext(){schWeekOffset++;renderSchView();}
 
 // ── 모달 ──────────────────────────────────────────────
-function showChipModal(sid,tk){
+function showChipModal(sid,sk){
   const a=AP[sid];if(!a)return;
   const p=parseSid(a.sid);
-  const{label}=parseTimeKey(tk);
-  modalCtx={sid,tk};
-  const univHtml=a.appCnt>1?`<div class="dr"><span class="dl">희망 횟수</span><span>${a.appCnt}회</span></div>`:'';
-  const univDataHtml=Object.entries(a.univData||{}).map(([n,u])=>`
-    <div class="dr"><span class="dl">${n}회차</span><span>${u.school||''}${u.major?' · '+u.major:''}${u.interviewDate?' ('+u.interviewDate+')':''}</span></div>`).join('');
-  const extraHtml=a.extra?.mmiSchool?`<div class="dr"><span class="dl">MMI 학교/과목</span><span>${a.extra.mmiSchool} / ${a.extra.mmiSubject}</span></div>`:
-    a.extra?.univQ?`<div class="dr" style="flex-direction:column;gap:4px;"><span class="dl">대학 자체 질문</span><span style="font-size:12px;color:#888;">${a.extra.univQ}</span></div>`:'';
+  const slot=SLOTS[sk];
+  const assignLabel=slot?`${dateLabel(slot.date)} ${slot.label||slot.time}`:sk;
+  modalCtx={sid,sk};
+  const extraHtml=a.extra?.mmiSchool
+    ?`<div class="dr"><span class="dl">MMI 학교/과목</span><span>${a.extra.mmiSchool} / ${a.extra.mmiSubject}</span></div>`
+    :a.extra?.univQ
+    ?`<div class="dr" style="flex-direction:column;gap:4px;"><span class="dl">대학 자체 질문</span><span style="font-size:12px;color:#888;">${a.extra.univQ}</span></div>`:'';
   document.getElementById('modal-title').textContent=`${a.name} 배정 정보`;
   document.getElementById('modal-body').innerHTML=`
     <div class="dr"><span class="dl">학번</span><span style="font-family:monospace;">${a.sid}</span></div>
     <div class="dr"><span class="dl">학년/반</span><span>${p?p.label:'-'}</span></div>
     <div class="dr"><span class="dl">면접 유형</span><span><span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}">${a.type}</span></span></div>
-    <div class="dr"><span class="dl">배정 시간</span><span style="font-weight:600;">${label}</span></div>
+    ${a.school?`<div class="dr"><span class="dl">지원 학교</span><span>${a.school}${a.major?' · '+a.major:''}</span></div>`:''}
+    ${a.interviewDate?`<div class="dr"><span class="dl">면접 날짜</span><span>${a.interviewDate}</span></div>`:''}
+    ${a.appCnt?`<div class="dr"><span class="dl">희망 횟수</span><span>${a.appCnt}회</span></div>`:''}
+    <div class="dr"><span class="dl">배정 시간</span><span style="font-weight:600;">${assignLabel}</span></div>
     <div class="dr"><span class="dl">장소</span><span>${a.place||'미배정'}</span></div>
-    ${univHtml}${univDataHtml}${extraHtml}
+    ${extraHtml}
     ${a.intro?`<div class="dr" style="flex-direction:column;gap:4px;"><span class="dl">자기소개</span><span style="font-size:12px;color:#888;">${a.intro}</span></div>`:''}`;
   document.getElementById('modal-remove-btn').style.display=curMode==='admin'?'inline-block':'none';
   document.getElementById('modal-overlay').classList.add('open');
@@ -1333,7 +1423,7 @@ function switchSub(id,btn){
   document.querySelectorAll('.sub-sec').forEach(s=>s.classList.remove('active'));
   document.getElementById('sub-'+id).classList.add('active');
   if(id==='students'){syncAdminFilters();renderStudentList();}
-  if(id==='slots'){renderSlotList();}
+  if(id==='slots'){renderTimeSlotList();renderPlaceSlotList();renderSlotList();}
   if(id==='assign'){renderWcal();renderSidebar();}
   if(id==='teachers'){renderTeachers();renderTaWcal();renderTeacherAssigns();}
   if(id==='blocked'){renderBlockedDates();renderBdCal();}
@@ -1371,7 +1461,6 @@ document.addEventListener('DOMContentLoaded',function(){
   initMode();
   renderCal();
   renderTimeTags();
-  updateUnivTabs();
   initFirebase();
 });
 </script>
