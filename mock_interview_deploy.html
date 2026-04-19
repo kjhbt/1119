@@ -715,15 +715,12 @@ function dateKey(y,m,d){ return`${y}-${String(m+1).padStart(2,'0')}-${String(d).
 function dateLabel(k){ const[y,m,d]=k.split('-');const dt=new Date(+y,+m-1,+d);return`${+m}/${+d}(${WDAYS[dt.getDay()]})`; }
 
 // ── 슬롯 헬퍼 ─────────────────────────────────────────
-// 슬롯 키: YYYYMMDD_ts_HHMM
-function getSlotsForDate(dateK){
-// 슬롯 관련 헬퍼
 function getSlotsForDate(dateK){
   return Object.values(SLOTS).filter(s=>s.date===dateK);
 }
-// 지원자의 모든 선택 slotKey 배열 반환 (날짜순 정렬)
+// 지원자의 모든 선택 slotKey 배열 반환
 function getApplicantSlotKeys(a){
-  return getApplicantSlotKeys(a);
+  return Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
 }
 function getSlotUsedByKey(tk){
   return Object.values(AP).filter(a=>a.asgn===tk).length;
