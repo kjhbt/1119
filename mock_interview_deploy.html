@@ -96,8 +96,8 @@ textarea{resize:vertical;line-height:1.5;}
 .frow select{width:auto;font-size:12px;padding:6px 10px;}
 .tbl-wrap{overflow-x:auto;}
 table.data-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:700px;}
-table.data-tbl th{padding:9px 12px;text-align:left;color:#777;font-weight:700;border-bottom:2px solid #e8e8e3;background:#f9f9f7;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
-table.data-tbl td{padding:8px 12px;border-bottom:1px solid #f0f0ec;vertical-align:middle;}
+table.data-tbl th{padding:9px 12px;text-align:center;color:#777;font-weight:700;border-bottom:2px solid #e8e8e3;background:#f9f9f7;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+table.data-tbl td{padding:8px 12px;border-bottom:1px solid #f0f0ec;vertical-align:middle;text-align:center;}
 table.data-tbl tr:last-child td{border-bottom:none;}
 table.data-tbl tr:hover td{background:#fafaf8;}
 .admin-layout{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start;}
@@ -330,7 +330,7 @@ table.data-tbl tr:hover td{background:#fafaf8;}
       <div class="tbl-wrap">
         <table class="data-tbl">
           <thead><tr>
-            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>면접일자</th><th>배정 시간</th><th>장소</th><th>담당교사</th><th>삭제</th>
+            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>학과</th><th>배정 시간</th><th>장소</th><th>담당교사</th><th>삭제</th>
           </tr></thead>
           <tbody id="student-tbody"></tbody>
         </table>
@@ -1256,17 +1256,22 @@ function renderStudentList(){
 
     return`<tr>
       <td style="font-family:monospace;font-size:12px;color:#666;">${a.sid}</td>
-      <td>
+      <td style="text-align:left;">
         <div style="font-weight:700;font-size:13px;color:#1a1a18;">${a.name}</div>
         <span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}" style="font-size:10px;margin-top:2px;display:inline-block;">${a.type}</span>
       </td>
-      <td style="text-align:center;font-size:12px;font-weight:600;color:#534AB7;">${a.appCnt||1}회</td>
-      <td style="font-size:12px;color:#555;white-space:nowrap;">${iDate}</td>
+      <td style="font-weight:600;color:#534AB7;">${a.appCnt||1}회</td>
+      <td style="font-size:12px;color:#555;">${a.major||a.dept||'—'}</td>
       <td>
         <select style="font-size:11px;width:150px;" onchange="setAsgn('${a.sid}',this.value)">
           <option value="">${a.asgn?'재배정':'배정 선택'}</option>${timeOpts}
         </select>
-        ${asgnLabel?`<div style="font-size:10px;color:#534AB7;margin-top:2px;font-weight:600;">${asgnLabel}</div>`:''}
+        ${asgnLabel?`<div style="font-size:10px;color:#534AB7;margin-top:2px;font-weight:600;">1회: ${asgnLabel}</div>`:''}
+        ${[2,3,4,5].map(i=>{
+          const sk=a[`asgn${i}`];
+          const s=sk?SLOTS[sk]:null;
+          return s?`<div style="font-size:10px;color:#1D9E75;margin-top:1px;font-weight:600;">${i}회: ${slotHumanLabel(s)}</div>`:'';
+        }).join('')}
       </td>
       <td>
         <select style="font-size:11px;width:110px;" onchange="setPlace('${a.sid}',this.value)">
@@ -1373,27 +1378,21 @@ function selectStrategy(el){
 }
 
 // ── 핵심 배정 엔진 (2패스 알고리즘) ─────────────────
-// 1패스: 모든 학생 1회 배정 보장
-// 2패스: 2회 이상 희망자 날짜 간격 균등 분배
 function runAssignEngine(strategy, opts){
   const apList=Object.values(AP);
   const skipAssigned=opts.skipAssigned;
   const beforeInterview=opts.beforeInterview;
   const places=getPlaces();
 
-  // 슬롯 카운터 (이미 배정된 것 반영)
+  // 슬롯 카운터
   const slotCounter={};
   apList.filter(a=>a.asgn&&skipAssigned).forEach(a=>{
     slotCounter[a.asgn]=(slotCounter[a.asgn]||0)+1;
   });
 
-  // 배정 대상
   let targets=skipAssigned?apList.filter(a=>!a.asgn):[...apList];
-
-  // 전략별 초기 정렬 (1패스 순서 결정)
   targets=sortTargets(targets, strategy);
 
-  // 결과 맵: sid → {sid, name, type, interviewDate, wantCnt, assigned:[], failed, partial, reason}
   const resultMap={};
   targets.forEach(a=>{
     resultMap[a.sid]={
@@ -1404,7 +1403,7 @@ function runAssignEngine(strategy, opts){
     };
   });
 
-  // ── 1패스: 모든 학생 1회 배정 ──────────────────────
+  // ── 1패스: 모든 학생 1회 배정 보장 ─────────────────
   targets.forEach(a=>{
     const r=resultMap[a.sid];
     const slotKeys=getSortedSlotKeys(a, beforeInterview);
@@ -1413,10 +1412,8 @@ function runAssignEngine(strategy, opts){
       if(!slot)continue;
       const used=slotCounter[sk]||0;
       if(used>=slot.max)continue;
-      // 1패스: 가장 이른 가능한 슬롯 1개만 배정
       const placeIdx=used%(places.length||4);
-      const place=places[placeIdx]?.place||'';
-      r.assigned.push({sk, place});
+      r.assigned.push({sk, place:places[placeIdx]?.place||''});
       slotCounter[sk]=(slotCounter[sk]||0)+1;
       break;
     }
@@ -1426,38 +1423,38 @@ function runAssignEngine(strategy, opts){
     }
   });
 
-  // ── 2패스: 2회 이상 희망자 추가 배정 (날짜 간격 균등) ──
-  // 희망 횟수 많은 순으로 처리
-  const multiWant=targets.filter(a=>(a.appCnt||1)>1&&resultMap[a.sid].assigned.length>0)
+  // ── 2패스: 희망 횟수 추가 배정 ──────────────────────
+  // 핵심: 이미 배정된 날짜를 제외하고, 남은 가능 슬롯에서 날짜 간격 균등하게 N개 선택
+  const multiWant=targets
+    .filter(a=>(a.appCnt||1)>1 && resultMap[a.sid].assigned.length>0)
     .sort((a,b)=>(b.appCnt||1)-(a.appCnt||1));
 
   multiWant.forEach(a=>{
     const r=resultMap[a.sid];
     const wantCnt=a.appCnt||1;
-    if(r.assigned.length>=wantCnt)return;
+    const alreadyAssigned=r.assigned.length;
+    if(alreadyAssigned>=wantCnt)return;
 
-    const slotKeys=getSortedSlotKeys(a, beforeInterview);
-    const usedDates=new Set(r.assigned.map(x=>SLOTS[x.sk]?.date).filter(Boolean));
+    const need=wantCnt-alreadyAssigned;
+    const assignedDates=new Set(r.assigned.map(x=>SLOTS[x.sk]?.date).filter(Boolean));
 
-    // 이미 배정된 날짜들 기준으로 간격 계산
-    const assignedDates=r.assigned.map(x=>SLOTS[x.sk]?.date).filter(Boolean).sort();
-    const firstDate=assignedDates[0];
-    const lastDate=assignedDates[assignedDates.length-1];
-
-    // 가능한 슬롯 중 날짜 중복 없는 것들 수집
-    const candidates=slotKeys.filter(sk=>{
+    // 사용 가능한 후보 슬롯: 이미 배정된 날짜 제외, 여유 있는 것
+    const candidates=getSortedSlotKeys(a, beforeInterview).filter(sk=>{
       const slot=SLOTS[sk];
       if(!slot)return false;
-      if(usedDates.has(slot.date))return false;
-      if((slotCounter[sk]||0)>=slot.max)return false;
+      if(assignedDates.has(slot.date))return false;  // 같은 날 중복 방지
+      if((slotCounter[sk]||0)>=slot.max)return false; // 마감 슬롯 제외
       return true;
     });
 
-    // 남은 필요 횟수
-    const remaining=wantCnt-r.assigned.length;
+    if(!candidates.length){
+      r.partial=true;
+      return;
+    }
 
-    // 날짜 간격이 최대한 균등하도록 후보 슬롯 선택
-    const picked=pickEvenlySpaced(candidates, remaining, assignedDates);
+    // 날짜 간격 균등 배정: need개 선택
+    const sortedAssignedDates=[...assignedDates].sort();
+    const picked=pickEvenlySpaced(candidates, need, sortedAssignedDates);
 
     picked.forEach(sk=>{
       const slot=SLOTS[sk];
@@ -1465,20 +1462,18 @@ function runAssignEngine(strategy, opts){
       const used=slotCounter[sk]||0;
       if(used>=slot.max)return;
       const placeIdx=used%(places.length||4);
-      const place=places[placeIdx]?.place||'';
-      r.assigned.push({sk, place});
-      usedDates.add(slot.date);
+      r.assigned.push({sk, place:places[placeIdx]?.place||''});
+      assignedDates.add(slot.date);
       slotCounter[sk]=(slotCounter[sk]||0)+1;
     });
 
-    r.partial=r.assigned.length>0&&r.assigned.length<wantCnt;
+    r.partial=r.assigned.length>0 && r.assigned.length<wantCnt;
   });
 
-  // 결과 정리
   const results=Object.values(resultMap).map(r=>({
     ...r,
     failed:r.assigned.length===0,
-    partial:r.assigned.length>0&&r.assigned.length<r.wantCnt,
+    partial:r.assigned.length>0 && r.assigned.length<r.wantCnt,
   }));
 
   return{results, slotCounter};
