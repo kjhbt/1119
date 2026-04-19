@@ -22,131 +22,131 @@ const FIREBASE_CONFIG = {
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f5f5f0;color:#1a1a18;min-height:100vh;}
 .app{max-width:980px;margin:0 auto;padding:16px;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border:1px solid #e5e5e0;border-radius:12px;margin-bottom:16px;}
-.topbar-title{font-size:15px;font-weight:600;}
-.topbar-tabs{display:flex;gap:4px;}
-.ttab{padding:6px 14px;font-size:13px;border-radius:8px;border:1px solid #ddd;background:none;cursor:pointer;color:#666;}
-.ttab.active{background:#534AB7;color:#fff;border-color:#534AB7;}
-.ttab:hover:not(.active){background:#f0f0f0;}
-.mode-badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border:1px solid #e5e5e0;border-radius:14px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.topbar-title{font-size:15px;font-weight:700;color:#1a1a18;}
+.topbar-tabs{display:flex;gap:6px;}
+.ttab{padding:7px 16px;font-size:13px;border-radius:9px;border:1px solid #e0e0da;background:#fff;cursor:pointer;color:#666;font-weight:500;transition:all .15s;}
+.ttab.active{background:#534AB7;color:#fff;border-color:#534AB7;box-shadow:0 2px 8px rgba(83,74,183,.3);}
+.ttab:hover:not(.active){background:#f5f5f0;color:#444;}
+.mode-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;}
 .mode-student{background:#E1F5EE;color:#085041;}
 .mode-admin{background:#EEEDFE;color:#3C3489;}
 .page{display:none;}.page.active{display:block;}
-.card{background:#fff;border:1px solid #e5e5e0;border-radius:12px;padding:16px 20px;margin-bottom:12px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.fg{display:flex;flex-direction:column;gap:5px;}
-.fg label{font-size:12px;color:#666;font-weight:500;}
-input,select,textarea{font-size:14px;width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a18;outline:none;}
-input:focus,select:focus,textarea:focus{border-color:#534AB7;box-shadow:0 0 0 2px rgba(83,74,183,.12);}
-textarea{resize:vertical;}
-.btn{padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;border:1px solid #ddd;background:#fff;color:#1a1a18;}
-.btn-p{background:#534AB7;color:#fff;border-color:#534AB7;}.btn-p:hover{background:#3C3489;}
+.card{background:#fff;border:1px solid #e8e8e3;border-radius:14px;padding:20px 24px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.fg{display:flex;flex-direction:column;gap:6px;}
+.fg label{font-size:12px;color:#555;font-weight:600;letter-spacing:.01em;}
+input,select,textarea{font-size:14px;width:100%;padding:9px 12px;border:1.5px solid #e0e0da;border-radius:9px;background:#fff;color:#1a1a18;outline:none;transition:border-color .15s,box-shadow .15s;}
+input:focus,select:focus,textarea:focus{border-color:#534AB7;box-shadow:0 0 0 3px rgba(83,74,183,.1);}
+textarea{resize:vertical;line-height:1.5;}
+.btn{padding:9px 18px;border-radius:9px;font-size:13px;cursor:pointer;font-weight:600;border:1.5px solid #ddd;background:#fff;color:#1a1a18;transition:all .15s;}
+.btn-p{background:#534AB7;color:#fff;border-color:#534AB7;box-shadow:0 2px 6px rgba(83,74,183,.25);}.btn-p:hover{background:#3C3489;box-shadow:0 3px 10px rgba(83,74,183,.35);}
 .btn-s{background:#1D9E75;color:#fff;border-color:#1D9E75;}.btn-s:hover{background:#0F6E56;}
 .btn-d{color:#A32D2D;border-color:#F09595;background:#fff;}.btn-d:hover{background:#FCEBEB;}
-.btn:hover:not(.btn-p):not(.btn-s):not(.btn-d){background:#f5f5f5;}
-.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;}
+.btn:hover:not(.btn-p):not(.btn-s):not(.btn-d){background:#f5f5f0;}
+.badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;}
 .b-pur{background:#EEEDFE;color:#3C3489;}.b-teal{background:#E1F5EE;color:#085041;}
 .b-amb{background:#FAEEDA;color:#633806;}.b-cor{background:#FAECE7;color:#712B13;}
 .b-gry{background:#F1EFE8;color:#444441;}.b-grn{background:#EAF3DE;color:#27500A;}
-.sbanner{background:#E1F5EE;border:1px solid #5DCAA5;border-radius:8px;padding:10px 14px;font-size:13px;color:#085041;margin-top:10px;display:none;}
-.errbanner{background:#FCEBEB;border:1px solid #F09595;border-radius:8px;padding:10px 14px;font-size:13px;color:#A32D2D;margin-top:8px;display:none;}
-.loading-overlay{background:#fff8;padding:12px 16px;border-radius:8px;font-size:13px;color:#666;text-align:center;border:1px solid #e5e5e0;}
-.sid-hint{font-size:12px;min-height:16px;margin-top:3px;}
-.sid-ok{color:#085041;font-weight:500;}.sid-err{color:#A32D2D;}
-.cal-outer{border:1px solid #e5e5e0;border-radius:10px;overflow:hidden;margin-top:6px;}
-.cal-head{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#f5f5f0;border-bottom:1px solid #e5e5e0;}
-.cal-head span{font-size:13px;font-weight:600;}
-.cal-nav{background:none;border:none;cursor:pointer;font-size:18px;color:#666;padding:2px 8px;border-radius:6px;line-height:1;}
-.cal-nav:hover{background:#e5e5e0;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:6px 4px;}
-.cal-dow{font-size:11px;font-weight:600;text-align:center;padding:5px 2px;color:#888;}
-.cal-dow.sun{color:#A32D2D;}.cal-dow.sat{color:#185FA5;}
-.cday{text-align:center;padding:4px 2px;font-size:12px;cursor:pointer;border-radius:6px;min-height:36px;color:#1a1a18;}
-.cday:hover:not(.dis):not(.emp):not(.no-slot){background:#f0f0f0;}
-.cday.emp{cursor:default;}.cday.dis{opacity:.28;cursor:not-allowed;}
-.cday.sun{color:#A32D2D;}.cday.sat{color:#185FA5;}
-.cday.sel{background:#534AB7;color:#fff !important;}
-.cday.tod{font-weight:700;}
-.cday.tod::after{content:'';display:block;width:3px;height:3px;background:#534AB7;border-radius:50%;margin:1px auto 0;}
+.sbanner{background:#E1F5EE;border:1px solid #5DCAA5;border-radius:9px;padding:10px 16px;font-size:13px;color:#085041;margin-top:12px;display:none;font-weight:500;}
+.errbanner{background:#FCEBEB;border:1px solid #F09595;border-radius:9px;padding:10px 16px;font-size:13px;color:#A32D2D;margin-top:10px;display:none;}
+.loading-overlay{background:#fff;padding:14px 18px;border-radius:10px;font-size:13px;color:#888;text-align:center;border:1px solid #e5e5e0;}
+.sid-hint{font-size:12px;min-height:16px;margin-top:2px;}
+.sid-ok{color:#085041;font-weight:600;}.sid-err{color:#A32D2D;}
+.cal-outer{border:1.5px solid #e5e5e0;border-radius:12px;overflow:hidden;margin-top:8px;}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#f7f7f4;border-bottom:1px solid #e5e5e0;}
+.cal-head span{font-size:14px;font-weight:700;}
+.cal-nav{background:none;border:none;cursor:pointer;font-size:20px;color:#666;padding:3px 10px;border-radius:7px;line-height:1;}
+.cal-nav:hover{background:#e8e8e3;color:#333;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 6px;}
+.cal-dow{font-size:11px;font-weight:700;text-align:center;padding:5px 2px;color:#999;}
+.cal-dow.sun{color:#D44040;}.cal-dow.sat{color:#3A7BD5;}
+.cday{text-align:center;padding:5px 2px;font-size:12px;cursor:pointer;border-radius:8px;min-height:38px;color:#1a1a18;transition:background .1s;}
+.cday:hover:not(.dis):not(.emp):not(.no-slot){background:#f0f0ec;}
+.cday.emp{cursor:default;}.cday.dis{opacity:.25;cursor:not-allowed;}
+.cday.sun{color:#D44040;}.cday.sat{color:#3A7BD5;}
+.cday.sel{background:#534AB7;color:#fff !important;box-shadow:0 2px 6px rgba(83,74,183,.3);}
+.cday.tod{font-weight:800;}
+.cday.tod::after{content:'';display:block;width:4px;height:4px;background:#534AB7;border-radius:50%;margin:2px auto 0;}
 .cday.sel.tod::after{background:#fff;}
-.cday.has-slot{background:#EAF3DE;}
+.cday.has-slot{background:#EDF6E4;}
 .cday.has-slot.sel{background:#534AB7;}
-.cday.no-slot{opacity:.3;cursor:not-allowed;}
-.cday.blocked{background:#FCEBEB !important;color:#A32D2D !important;cursor:not-allowed;}
-.cday .ptag{font-size:9px;display:block;margin-top:1px;opacity:.9;}
-.period-pick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.pbtn{padding:6px 14px;font-size:12px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;font-weight:500;position:relative;}
-.pbtn.on{background:#534AB7;color:#fff;border-color:#534AB7;}
-.pbtn.full{background:#f0f0f0;color:#aaa;cursor:not-allowed;border-color:#ddd;}
-.pbtn:hover:not(.on):not(.full){background:#f0f0f0;}
-.pbtn .slot-count{font-size:10px;opacity:.8;margin-left:4px;}
-.time-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;min-height:24px;}
-.ttag{display:inline-flex;align-items:center;gap:4px;background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;border-radius:8px;padding:3px 10px;font-size:11px;}
-.ttag button{background:none;border:none;cursor:pointer;color:#7F77DD;font-size:14px;line-height:1;padding:0;}
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
-.stat-c{background:#f5f5f0;border-radius:8px;padding:12px;text-align:center;border:1px solid #e5e5e0;}
-.stat-n{font-size:22px;font-weight:600;}.stat-l{font-size:11px;color:#888;margin-top:2px;}
-.section-sub{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid #e5e5e0;flex-wrap:wrap;}
-.stab{padding:6px 14px;font-size:13px;border:none;background:none;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500;}
+.cday.no-slot{opacity:.25;cursor:not-allowed;}
+.cday.blocked{background:#FCEBEB !important;color:#D44040 !important;cursor:not-allowed;}
+.cday .ptag{font-size:9px;display:block;margin-top:1px;opacity:.85;color:inherit;}
+.period-pick{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.pbtn{padding:8px 16px;font-size:12px;border-radius:9px;border:1.5px solid #e0e0da;background:#fff;color:#555;cursor:pointer;font-weight:600;transition:all .15s;}
+.pbtn.on{background:#534AB7;color:#fff;border-color:#534AB7;box-shadow:0 2px 6px rgba(83,74,183,.25);}
+.pbtn.full{background:#f5f5f0;color:#bbb;cursor:not-allowed;border-color:#e0e0da;}
+.pbtn:hover:not(.on):not(.full){background:#f5f5f0;border-color:#ccc;}
+.pbtn .slot-count{font-size:10px;opacity:.75;margin-left:5px;}
+.time-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:26px;}
+.ttag{display:inline-flex;align-items:center;gap:5px;background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;border-radius:9px;padding:4px 12px;font-size:11px;font-weight:500;}
+.ttag button{background:none;border:none;cursor:pointer;color:#7F77DD;font-size:15px;line-height:1;padding:0;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stat-c{background:#fff;border-radius:12px;padding:16px 12px;text-align:center;border:1px solid #e8e8e3;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.stat-n{font-size:24px;font-weight:700;color:#1a1a18;}.stat-l{font-size:11px;color:#999;margin-top:3px;font-weight:500;}
+.section-sub{display:flex;gap:2px;margin-bottom:16px;border-bottom:2px solid #f0f0ec;flex-wrap:wrap;}
+.stab{padding:8px 16px;font-size:13px;border:none;background:none;cursor:pointer;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:600;transition:color .15s;}
 .stab.active{color:#534AB7;border-bottom:2px solid #534AB7;}
+.stab:hover:not(.active){color:#555;}
 .sub-sec{display:none;}.sub-sec.active{display:block;}
-.frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
-.frow label{font-size:12px;color:#666;white-space:nowrap;font-weight:500;}
-.frow select{width:auto;font-size:12px;padding:5px 8px;}
+.frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.frow label{font-size:12px;color:#666;white-space:nowrap;font-weight:600;}
+.frow select{width:auto;font-size:12px;padding:6px 10px;}
 .tbl-wrap{overflow-x:auto;}
 table.data-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:700px;}
-table.data-tbl th{padding:7px 10px;text-align:left;color:#888;font-weight:600;border-bottom:1px solid #e5e5e0;background:#f9f9f7;}
-table.data-tbl td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+table.data-tbl th{padding:9px 12px;text-align:left;color:#777;font-weight:700;border-bottom:2px solid #e8e8e3;background:#f9f9f7;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+table.data-tbl td{padding:8px 12px;border-bottom:1px solid #f0f0ec;vertical-align:middle;}
 table.data-tbl tr:last-child td{border-bottom:none;}
 table.data-tbl tr:hover td{background:#fafaf8;}
-.admin-layout{display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;}
-.sidebar-box{border:1px solid #e5e5e0;border-radius:12px;overflow:hidden;background:#fff;}
-.sidebar-head{padding:8px 12px;background:#f5f5f0;border-bottom:1px solid #e5e5e0;font-size:13px;font-weight:600;}
-.sidebar-list{padding:6px;}
-.sc-card{padding:8px 10px;border-radius:8px;border:1px solid #e5e5e0;margin-bottom:5px;cursor:grab;background:#fff;font-size:12px;user-select:none;}
-.sc-card:hover{border-color:#AFA9EC;background:#EEEDFE;}
-.sc-card.dragging{opacity:.35;}
-.sc-card .sc-name{font-weight:600;}
-.sc-card .sc-sub{color:#888;font-size:11px;margin-top:2px;}
-.week-nav{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.week-nav .wlabel{font-size:13px;font-weight:600;flex:1;text-align:center;}
-.wcal-wrap{border:1px solid #e5e5e0;border-radius:10px;overflow:hidden;}
+.admin-layout{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start;}
+.sidebar-box{border:1.5px solid #e8e8e3;border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.sidebar-head{padding:10px 14px;background:#f7f7f4;border-bottom:1px solid #e8e8e3;font-size:13px;font-weight:700;}
+.sidebar-list{padding:8px;}
+.sc-card{padding:9px 12px;border-radius:9px;border:1px solid #e8e8e3;margin-bottom:6px;cursor:grab;background:#fff;font-size:12px;user-select:none;transition:all .15s;}
+.sc-card:hover{border-color:#AFA9EC;background:#EEEDFE;transform:translateY(-1px);box-shadow:0 2px 6px rgba(83,74,183,.12);}
+.sc-card.dragging{opacity:.3;}
+.sc-card .sc-name{font-weight:700;color:#1a1a18;}
+.sc-card .sc-sub{color:#999;font-size:11px;margin-top:3px;}
+.week-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.week-nav .wlabel{font-size:14px;font-weight:700;flex:1;text-align:center;}
+.wcal-wrap{border:1.5px solid #e8e8e3;border-radius:12px;overflow:hidden;}
 .wcal-wrap table{width:100%;border-collapse:collapse;table-layout:fixed;}
-.wcal-wrap th{font-size:12px;font-weight:600;padding:7px 4px;text-align:center;background:#f5f5f0;border-bottom:1px solid #e5e5e0;color:#444;}
-.wcal-wrap td{vertical-align:top;padding:4px;border:1px solid #f0f0f0;min-height:60px;}
-.wcal-wrap .plbl{font-size:11px;color:#888;font-weight:600;background:#f9f9f7;text-align:center;width:48px;}
-.drop-zone{min-height:54px;border-radius:6px;padding:2px;}
+.wcal-wrap th{font-size:12px;font-weight:700;padding:8px 4px;text-align:center;background:#f7f7f4;border-bottom:1.5px solid #e8e8e3;color:#555;}
+.wcal-wrap td{vertical-align:top;padding:5px;border:1px solid #f0f0ec;min-height:64px;}
+.wcal-wrap .plbl{font-size:11px;color:#999;font-weight:700;background:#f9f9f7;text-align:center;width:52px;}
+.drop-zone{min-height:56px;border-radius:7px;padding:3px;}
 .drop-zone.over{background:#EEEDFE;outline:2px dashed #7F77DD;}
-.ev-chip{border-radius:5px;padding:3px 7px;margin:2px 0;font-size:11px;cursor:pointer;display:block;line-height:1.4;word-break:keep-all;}
+.ev-chip{border-radius:6px;padding:4px 8px;margin:2px 0;font-size:11px;cursor:pointer;display:block;line-height:1.4;word-break:keep-all;font-weight:500;}
 .ev-chip:hover{opacity:.8;}
 .ec-pur{background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;}
 .ec-teal{background:#E1F5EE;color:#085041;border:1px solid #5DCAA5;}
 .ec-amb{background:#FAEEDA;color:#633806;border:1px solid #EF9F27;}
 .ec-cor{background:#FAECE7;color:#712B13;border:1px solid #F0997B;}
 .ec-gry{background:#F1EFE8;color:#444441;border:1px solid #B4B2A9;}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal-box{background:#fff;border-radius:14px;border:1px solid #e5e5e0;padding:20px;width:400px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12);}
-.modal-box h3{font-size:15px;font-weight:600;margin-bottom:14px;}
-.dr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;}
-.dr:last-child{border-bottom:none;}.dl{color:#888;}
-.grp-title{font-size:13px;font-weight:600;margin:14px 0 6px;padding:6px 12px;background:#f5f5f0;border-radius:8px;}
-.grp-title.cls{border-left:3px solid #534AB7;border-radius:0 8px 8px 0;}
-.grp-title.tch{border-left:3px solid #1D9E75;border-radius:0 8px 8px 0;}
-.slot-chip{display:inline-block;padding:3px 8px;border-radius:6px;font-size:11px;margin:2px;cursor:pointer;border:1px solid #e5e5e0;background:#f5f5f0;color:#444;}
+.modal-box{background:#fff;border-radius:16px;padding:24px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.18);}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:16px;color:#1a1a18;}
+.dr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0ec;font-size:13px;gap:12px;}
+.dr:last-child{border-bottom:none;}.dl{color:#999;font-weight:500;white-space:nowrap;}
+.grp-title{font-size:13px;font-weight:700;margin:16px 0 8px;padding:7px 14px;background:#f7f7f4;border-radius:9px;}
+.grp-title.cls{border-left:3px solid #534AB7;border-radius:0 9px 9px 0;}
+.grp-title.tch{border-left:3px solid #1D9E75;border-radius:0 9px 9px 0;}
+.slot-chip{display:inline-block;padding:4px 10px;border-radius:7px;font-size:11px;margin:2px;cursor:pointer;border:1px solid #e5e5e0;background:#f5f5f0;color:#555;font-weight:500;}
 .slot-chip.full{background:#FCEBEB;color:#A32D2D;border-color:#F09595;}
-.slot-chip.avail{background:#EAF3DE;color:#27500A;border-color:#97C459;}
-.notice-box{background:#FFF8E1;border:1px solid #EF9F27;border-radius:8px;padding:10px 14px;font-size:12px;color:#633806;margin-bottom:12px;line-height:1.6;}
-.app-cnt-box{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
-.cnt-btn{width:36px;height:36px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer;font-weight:600;display:flex;align-items:center;justify-content:center;}
-.cnt-btn:hover{background:#f0f0f0;}
-.cnt-display{font-size:18px;font-weight:700;min-width:32px;text-align:center;color:#534AB7;}
-.univ-tab{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;margin:0 3px 6px 0;}
-.univ-tab.active{background:#534AB7;color:#fff;border-color:#534AB7;}
-.univ-tabs-wrap{display:flex;flex-wrap:wrap;margin-bottom:10px;}
-.day-check-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
-.day-cb{display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;}
-.day-cb input{width:auto;}
+.slot-chip.avail{background:#EDF6E4;color:#27500A;border-color:#97C459;}
+.notice-box{background:#FFFBEF;border:1px solid #F0C060;border-radius:10px;padding:12px 16px;font-size:13px;color:#7A5500;margin-bottom:16px;line-height:1.7;}
+.app-cnt-box{display:flex;gap:10px;align-items:center;margin-bottom:4px;}
+.cnt-btn{width:38px;height:38px;border-radius:9px;border:1.5px solid #e0e0da;background:#fff;font-size:18px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cnt-btn:hover{background:#f0f0ec;border-color:#ccc;}
+.cnt-display{font-size:22px;font-weight:800;min-width:36px;text-align:center;color:#534AB7;}
+.day-check-wrap{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.day-cb{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;font-weight:500;}
+.day-cb input{width:auto;cursor:pointer;}
+.extra-section{background:#f9f9f7;border:1px solid #e8e8e3;border-radius:10px;padding:14px 16px;margin-bottom:14px;}
+.extra-section-title{font-size:12px;font-weight:700;color:#534AB7;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
 @media print{
   .topbar,.week-nav,.frow,.btn,#loading-box{display:none!important;}
   .app{padding:0;}
@@ -182,14 +182,17 @@ table.data-tbl tr:hover td{background:#fafaf8;}
     <div class="notice-box">
       ※ 가능한 날짜와 시간을 <strong>최대한 많이 선택</strong>해 주세요. 선착순으로 배정됩니다.
     </div>
+
+    <!-- 기본 정보 -->
     <div class="form-grid">
       <div class="fg">
         <label>학번 *</label>
-        <input type="text" id="f-sid" placeholder="학번" maxlength="5" inputmode="numeric" oninput="onSidInput(this.value)">
+        <input type="text" id="f-sid" placeholder="학번 4~5자리" maxlength="5" inputmode="numeric" oninput="onSidInput(this.value)">
         <div class="sid-hint" id="sid-hint"></div>
       </div>
       <div class="fg"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동"></div>
-      <div class="fg"><label>학과명 *</label><input type="text" id="f-dept" placeholder="예: 컴퓨터공학과"></div>
+      <div class="fg"><label>지원 학교명 *</label><input type="text" id="f-school" placeholder="예: 서울대학교"></div>
+      <div class="fg"><label>지원 학과 *</label><input type="text" id="f-major" placeholder="예: 의학과"></div>
       <div class="fg">
         <label>면접 유형 *</label>
         <select id="f-type" onchange="onTypeChange()">
@@ -201,40 +204,52 @@ table.data-tbl tr:hover td{background:#fafaf8;}
           <option>기타</option>
         </select>
       </div>
-      <div class="fg"><label>지원 학교명 *</label><input type="text" id="f-school" placeholder="예: 서울대학교"></div>
-      <div class="fg"><label>지원 학과 *</label><input type="text" id="f-major" placeholder="예: 의학과"></div>
-      <div class="fg" style="grid-column:1/-1"><label>가장 빠른 면접 날짜 *</label><input type="date" id="f-interview-date"></div>
+      <div class="fg"><label>가장 빠른 면접 날짜 *</label><input type="date" id="f-interview-date"></div>
     </div>
 
-    <!-- MMI 비고 -->
-    <div id="mmi-extra" style="display:none;margin-bottom:12px;">
-      <div class="form-grid">
-        <div class="fg"><label>학교명 * (MMI)</label><input type="text" id="f-mmi-school" placeholder="예: 서울대학교"></div>
-        <div class="fg"><label>과목명 * (MMI)</label><input type="text" id="f-mmi-subject" placeholder="예: 생명과학"></div>
+    <!-- MMI 추가 정보 -->
+    <div id="mmi-extra" style="display:none;margin-bottom:12px;padding:12px 14px;background:#f9f9f7;border-radius:8px;border:1px solid #e5e5e0;">
+      <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:8px;">MMI 추가 정보</div>
+      <div class="form-grid" style="margin-bottom:0;">
+        <div class="fg"><label>학교명 *</label><input type="text" id="f-mmi-school" placeholder="예: 서울대학교"></div>
+        <div class="fg"><label>과목명 *</label><input type="text" id="f-mmi-subject" placeholder="예: 생명과학"></div>
       </div>
     </div>
-    <!-- 대학 자체 질문 비고 -->
-    <div id="univ-extra" style="display:none;margin-bottom:12px;">
-      <div class="fg">
-        <label>대학교 자체 질문 * <span style="font-weight:400;">(해당 대학의 질문을 입력해 주세요)</span></label>
-        <textarea id="f-univ-q" rows="3" placeholder="예: 본인의 지원 동기와 입학 후 계획을 서술하시오."></textarea>
+
+    <!-- 제시문 추가 정보 -->
+    <div id="present-extra" style="display:none;margin-bottom:12px;padding:12px 14px;background:#f9f9f7;border-radius:8px;border:1px solid #e5e5e0;">
+      <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:8px;">제시문 추가 정보</div>
+      <div class="form-grid" style="margin-bottom:0;">
+        <div class="fg"><label>학교명 *</label><input type="text" id="f-present-school" placeholder="예: 연세대학교"></div>
+        <div class="fg"><label>학과명 *</label><input type="text" id="f-present-major" placeholder="예: 경영학과"></div>
+      </div>
+    </div>
+
+    <!-- 대학 자체 질문 추가 정보 -->
+    <div id="univ-extra" style="display:none;margin-bottom:12px;padding:12px 14px;background:#f9f9f7;border-radius:8px;border:1px solid #e5e5e0;">
+      <div style="font-size:12px;font-weight:600;color:#444;margin-bottom:8px;">대학 자체 질문 내용</div>
+      <div class="fg" style="margin-bottom:0;">
+        <label>질문 내용 *</label>
+        <textarea id="f-univ-q" rows="3" placeholder="해당 대학의 자체 질문을 입력해 주세요."></textarea>
       </div>
     </div>
 
     <!-- 모의면접 횟수 -->
-    <div class="fg" style="margin-bottom:14px;">
+    <div class="fg" style="margin-bottom:16px;">
       <label>모의면접 희망 횟수 * <span style="font-weight:400;font-size:11px;color:#888;">(최대 <span id="max-cnt-label">3</span>회)</span></label>
       <div class="app-cnt-box">
-        <button class="cnt-btn" onclick="changeCnt(-1)">-</button>
+        <button class="cnt-btn" onclick="changeCnt(-1)">−</button>
         <span class="cnt-display" id="cnt-display">1</span>
         <button class="cnt-btn" onclick="changeCnt(1)">+</button>
-        <span style="font-size:12px;color:#888;">회 신청</span>
+        <span style="font-size:13px;color:#666;margin-left:4px;">회 신청</span>
       </div>
     </div>
 
-    <!-- 가능 날짜/교시 -->
-    <div class="fg" style="margin-bottom:14px;">
-      <label>면접 가능 날짜 및 교시 * <span style="font-weight:400;">(관리자가 등록한 슬롯만 선택 가능합니다)</span></label>
+    <!-- 가능 날짜/시간 -->
+    <div class="fg" style="margin-bottom:16px;">
+      <label>면접 가능 날짜 및 시간 *
+        <span style="font-weight:400;font-size:11px;color:#888;"> — 가능한 날짜를 최대한 많이 선택해 주세요</span>
+      </label>
       <div class="cal-outer">
         <div class="cal-head">
           <button class="cal-nav" onclick="calPrev()">&#8249;</button>
@@ -247,24 +262,20 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         </div>
         <div class="cal-grid" id="cal-days"></div>
       </div>
-      <div id="period-sec" style="display:none;margin-top:8px;">
-        <div style="font-size:12px;color:#666;margin-bottom:5px;">
-          <span id="sel-date-lbl" style="font-weight:600;color:#1a1a18;"></span> 교시 선택
-          <span style="color:#888;"> (초록=가능, 빨강=마감)</span>
+      <div id="period-sec" style="display:none;margin-top:10px;">
+        <div style="font-size:12px;color:#666;margin-bottom:6px;">
+          <span id="sel-date-lbl" style="font-weight:600;color:#1a1a18;"></span>
+          <span style="color:#888;margin-left:6px;">· 초록=신청 가능 / 회색=마감</span>
         </div>
         <div class="period-pick" id="period-btns"></div>
       </div>
       <div class="time-tags" id="time-tags"></div>
     </div>
 
-    <div class="fg" style="margin-bottom:14px;">
-      <label>자기소개 (선택)</label>
-      <textarea id="f-intro" rows="3" placeholder="지원 동기나 특이사항을 입력해 주세요."></textarea>
-    </div>
     <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:4px;">
-      <div class="sbanner" id="apply-ok" style="margin-top:0;">등록이 완료되었습니다! 면접 시간은 관리자 배정 후 별도 안내드립니다.</div>
+      <div class="sbanner" id="apply-ok" style="margin-top:0;">등록 완료! 면접 시간은 관리자 배정 후 안내드립니다.</div>
       <div class="errbanner" id="apply-err" style="margin-top:0;"></div>
-      <button class="btn btn-p" onclick="submitApply()">제출하기</button>
+      <button class="btn btn-p" onclick="submitApply()" style="padding:10px 24px;font-size:14px;">제출하기</button>
     </div>
   </div>
 </div>
@@ -688,7 +699,9 @@ function renderPeriodBtns(k){
     let cls='pbtn';
     if(selected) cls+=' on';
     else if(full) cls+=' full';
-    h+=`<button class="${cls}" onclick="toggleSlot('${k}','${slot.key}')" ${full?'disabled':''}>${slot.label||slot.time}<span class="slot-count">(${used}/${max})</span></button>`;
+    // 학생에게는 시간(HH:MM)으로 표시
+    const displayTime=slot.time||slot.label;
+    h+=`<button class="${cls}" onclick="toggleSlot('${k}','${slot.key}')" ${full?'disabled':''}>${displayTime}<span class="slot-count">(${used}/${max})</span></button>`;
   });
   container.innerHTML=h;
 }
@@ -735,6 +748,7 @@ function changeCnt(d){
 function onTypeChange(){
   const t=document.getElementById('f-type').value;
   document.getElementById('mmi-extra').style.display=t==='MMI'?'block':'none';
+  document.getElementById('present-extra').style.display=t==='제시문'?'block':'none';
   document.getElementById('univ-extra').style.display=t==='대학 자체 질문'?'block':'none';
 }
 
@@ -742,42 +756,43 @@ function onTypeChange(){
 function submitApply(){
   const sid=document.getElementById('f-sid').value.trim();
   const name=document.getElementById('f-name').value.trim();
-  const dept=document.getElementById('f-dept').value.trim();
+  const school=document.getElementById('f-school').value.trim();
+  const major=document.getElementById('f-major').value.trim();
   const type=document.getElementById('f-type').value;
-  const school=document.getElementById('f-school')?.value.trim()||'';
-  const major=document.getElementById('f-major')?.value.trim()||'';
-  const interviewDate=document.getElementById('f-interview-date')?.value||'';
-  const intro=document.getElementById('f-intro').value.trim();
+  const interviewDate=document.getElementById('f-interview-date').value;
   const timesObj={};
   Object.keys(selTimes).forEach(k=>{if(selTimes[k].length)timesObj[k]=selTimes[k];});
 
-  if(!sid||!name||!dept||!type){showErr('apply-err','필수 항목을 모두 입력해 주세요.');return;}
-  if(!school){showErr('apply-err','지원 학교명을 입력해 주세요.');return;}
-  if(!major){showErr('apply-err','지원 학과를 입력해 주세요.');return;}
-  if(!interviewDate){showErr('apply-err','가장 빠른 면접 날짜를 입력해 주세요.');return;}
+  if(!sid||!name||!school||!major||!type||!interviewDate){showErr('apply-err','모든 필수 항목을 입력해 주세요.');return;}
   if(!/^\d{4,5}$/.test(sid)){showErr('apply-err','학번은 4~5자리 숫자여야 합니다.');return;}
   if(!parseSid(sid)){showErr('apply-err','올바른 학번 형식이 아닙니다.');return;}
-  if(!Object.keys(timesObj).length){showErr('apply-err','가능한 날짜와 교시를 선택해 주세요.');return;}
-  if(type==='MMI'&&(!document.getElementById('f-mmi-school').value.trim()||!document.getElementById('f-mmi-subject').value.trim())){showErr('apply-err','MMI 학교명과 과목명을 입력해 주세요.');return;}
+  if(!Object.keys(timesObj).length){showErr('apply-err','가능한 날짜와 시간을 선택해 주세요.');return;}
+  if(type==='MMI'){
+    if(!document.getElementById('f-mmi-school').value.trim()||!document.getElementById('f-mmi-subject').value.trim()){showErr('apply-err','MMI 학교명과 과목명을 입력해 주세요.');return;}
+  }
+  if(type==='제시문'){
+    if(!document.getElementById('f-present-school').value.trim()||!document.getElementById('f-present-major').value.trim()){showErr('apply-err','제시문 학교명과 학과명을 입력해 주세요.');return;}
+  }
   if(type==='대학 자체 질문'&&!document.getElementById('f-univ-q').value.trim()){showErr('apply-err','대학교 자체 질문을 입력해 주세요.');return;}
 
   const extra={};
-  if(type==='MMI'){ extra.mmiSchool=document.getElementById('f-mmi-school').value.trim(); extra.mmiSubject=document.getElementById('f-mmi-subject').value.trim(); }
-  if(type==='대학 자체 질문'){ extra.univQ=document.getElementById('f-univ-q').value.trim(); }
+  if(type==='MMI'){extra.mmiSchool=document.getElementById('f-mmi-school').value.trim();extra.mmiSubject=document.getElementById('f-mmi-subject').value.trim();}
+  if(type==='제시문'){extra.presentSchool=document.getElementById('f-present-school').value.trim();extra.presentMajor=document.getElementById('f-present-major').value.trim();}
+  if(type==='대학 자체 질문'){extra.univQ=document.getElementById('f-univ-q').value.trim();}
 
   dbRef(`applicants/${sid}`).once('value').then(snap=>{
     if(snap.exists()){showErr('apply-err','이미 등록된 학번입니다.');return;}
     dbRef(`applicants/${sid}`).set({
-      sid,name,dept,type,times:timesObj,intro,
-      school,major,interviewDate,
-      appCnt,extra,
+      sid,name,school,major,type,times:timesObj,
+      interviewDate,appCnt,extra,
       asgn:'',place:'',registeredAt:Date.now()
     }).then(()=>{
-      ['f-sid','f-name','f-dept','f-intro','f-mmi-school','f-mmi-subject','f-univ-q','f-school','f-major','f-interview-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      ['f-sid','f-name','f-school','f-major','f-interview-date',
+       'f-mmi-school','f-mmi-subject','f-present-school','f-present-major','f-univ-q']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       document.getElementById('f-type').value='';
       document.getElementById('sid-hint').textContent='';
-      document.getElementById('mmi-extra').style.display='none';
-      document.getElementById('univ-extra').style.display='none';
+      ['mmi-extra','present-extra','univ-extra'].forEach(id=>document.getElementById(id).style.display='none');
       selTimes={};focusDate=null;
       document.getElementById('period-sec').style.display='none';
       appCnt=1;document.getElementById('cnt-display').textContent=1;
@@ -1117,20 +1132,40 @@ function renderStudentList(){
 
   tb.innerHTML=list.map(a=>{
     const p=parseSid(a.sid);
-    const timesArr=Object.keys(a.times||{}).flatMap(dk=>(a.times[dk]||[]).map(pe=>({key:timeKey(dk,pe),label:`${dateLabel(dk)} ${pe}교시`})));
-    const timeOpts=timesArr.map(t=>`<option value="${t.key}" ${a.asgn===t.key?'selected':''}>${t.label}</option>`).join('');
+    // 가능 시간: times에 저장된 slotKey 배열
+    const slotKeys=Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+    const slotLabels=slotKeys.map(sk=>{
+      const s=SLOTS[sk];
+      return s?`${dateLabel(s.date)} ${s.label||s.time}`:sk;
+    });
+    // 배정 시간: 레이블로 표시
+    const asgnSlot=a.asgn?SLOTS[a.asgn]:null;
+    const asgnLabel=asgnSlot?`${dateLabel(asgnSlot.date)} ${asgnSlot.label||asgnSlot.time}`:a.asgn||'';
+    // 배정 선택 옵션
+    const timeOpts=slotKeys.map(sk=>{
+      const s=SLOTS[sk];
+      const lbl=s?`${dateLabel(s.date)} ${s.label||s.time}`:sk;
+      return`<option value="${sk}" ${a.asgn===sk?'selected':''}>${lbl}</option>`;
+    }).join('');
+    // 장소 옵션
+    const placeOpts=getPlaces().map(p=>`<option value="${p.place}" ${a.place===p.place?'selected':''}>${p.place}</option>`).join('');
+    const isNum=/^\d+$/.test;
     return`<tr>
       <td style="font-family:monospace;font-size:11px;">${a.sid}</td>
       <td>${p?`<span class="badge b-grn" style="font-size:10px;">${p.grade}학년 ${p.cls}반</span>`:'-'}</td>
       <td style="font-weight:600;">${a.name}</td>
       <td><span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}" style="font-size:10px;">${a.type}</span></td>
       <td style="text-align:center;font-size:12px;">${a.appCnt||1}회</td>
-      <td style="font-size:11px;color:#888;">${timesArr.slice(0,2).map(t=>t.label).join(', ')}${timesArr.length>2?'…':''}</td>
-      <td><select style="font-size:11px;width:130px;" onchange="setAsgn('${a.sid}',this.value)"><option value="">${a.asgn?'재배정':'배정 선택'}</option>${timeOpts}</select></td>
-      <td><select style="font-size:11px;width:96px;" onchange="setPlace('${a.sid}',this.value)"><option value="">장소 선택</option>${PLACES.map(pl=>`<option value="${pl}" ${a.place===pl?'selected':''}>${pl}</option>`).join('')}</select></td>
+      <td style="font-size:11px;color:#888;">${slotLabels.slice(0,2).join(', ')}${slotLabels.length>2?'…':''}</td>
+      <td><select style="font-size:11px;width:140px;" onchange="setAsgn('${a.sid}',this.value)">
+        <option value="">${a.asgn?'재배정':'배정 선택'}</option>${timeOpts}
+      </select></td>
+      <td><select style="font-size:11px;width:110px;" onchange="setPlace('${a.sid}',this.value)">
+        <option value="">장소 선택</option>${placeOpts}
+      </select></td>
       <td>
-        <select class="ap-tsel" style="font-size:11px;width:84px;margin-bottom:2px;" onchange="setTeacher('${a.sid}',1,this.value)"><option value="">교사1</option>${sortedTeachers().map(t=>`<option value="${t.id}" ${a.teacher1===t.id?'selected':''}>${t.role==='부장'?'[부장] ':''}${t.name}</option>`).join('')}</select>
-        <select class="ap-tsel" style="font-size:11px;width:84px;" onchange="setTeacher('${a.sid}',2,this.value)"><option value="">교사2</option>${sortedTeachers().map(t=>`<option value="${t.id}" ${a.teacher2===t.id?'selected':''}>${t.role==='부장'?'[부장] ':''}${t.name}</option>`).join('')}</select>
+        <select class="ap-tsel" style="font-size:11px;width:84px;margin-bottom:2px;" onchange="setTeacher('${a.sid}',1,this.value)"><option value="">교사1</option>${sortedTeachers().map(t=>`<option value="${t.id}" ${a.teacher1===t.id?'selected':''}>${t.name}</option>`).join('')}</select>
+        <select class="ap-tsel" style="font-size:11px;width:84px;" onchange="setTeacher('${a.sid}',2,this.value)"><option value="">교사2</option>${sortedTeachers().map(t=>`<option value="${t.id}" ${a.teacher2===t.id?'selected':''}>${t.name}</option>`).join('')}</select>
       </td>
       <td><button class="btn btn-d" style="padding:3px 8px;font-size:11px;" onclick="delApplicant('${a.sid}')">삭제</button></td>
     </tr>`;
@@ -1143,33 +1178,52 @@ function setPlace(sid,v){ dbRef(`applicants/${sid}/place`).set(v||''); }
 function setTeacher(sid,slot,v){ dbRef(`applicants/${sid}/teacher${slot}`).set(v||'').then(()=>renderTeachers()); }
 function delApplicant(sid){ if(confirm(`${AP[sid]?.name||sid} 지원자를 삭제하시겠습니까?`)) dbRef(`applicants/${sid}`).remove(); }
 
-// ── 자동 배정 (슬롯별 최대 1명씩) ─────────────────────
+// ── 자동 배정 (희망 횟수만큼, 슬롯별 최대 인원 준수) ──
 function autoAssign(){
   const unassigned=Object.values(AP).filter(a=>!a.asgn);
   if(!unassigned.length){alert('미배정 학생이 없습니다.');return;}
   const places=getPlaces();
+  // 현재 각 슬롯 사용 수 카운터
   const slotCounter={};
-  Object.values(AP).filter(a=>a.asgn).forEach(a=>{ slotCounter[a.asgn]=(slotCounter[a.asgn]||0)+1; });
+  Object.values(AP).filter(a=>a.asgn).forEach(a=>{
+    const keys=Array.isArray(a.asgn)?a.asgn:[a.asgn];
+    keys.forEach(k=>{if(k)slotCounter[k]=(slotCounter[k]||0)+1;});
+  });
   const updates={};
+  let assignedCount=0;
+
   unassigned.forEach(a=>{
-    // times: {dateK: [slotKey, slotKey, ...]}
+    const wantCnt=a.appCnt||1;
     const slotKeys=Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+    const assigned=[];
+
     for(const sk of slotKeys){
+      if(assigned.length>=wantCnt) break;
       const slot=SLOTS[sk];
       if(!slot)continue;
+      if(assigned.includes(sk))continue; // 중복 방지
       const used=(slotCounter[sk]||0);
       if(used<slot.max){
-        const placeIdx=used%(places.length||PLACES.length);
+        const placeIdx=used%(places.length||4);
         const place=(places[placeIdx]?.place)||PLACES[placeIdx]||'';
-        updates[`${DB}/applicants/${a.sid}/asgn`]=sk;
-        updates[`${DB}/applicants/${a.sid}/place`]=place;
+        assigned.push(sk);
         slotCounter[sk]=(slotCounter[sk]||0)+1;
-        break;
+        // 첫 번째 배정을 asgn에, 장소도 첫 번째 기준
+        if(assigned.length===1){
+          updates[`${DB}/applicants/${a.sid}/asgn`]=sk;
+          updates[`${DB}/applicants/${a.sid}/place`]=place;
+        }
       }
     }
+    // 추가 배정분은 asgn2, asgn3...으로 저장
+    assigned.forEach((sk,i)=>{
+      if(i>0) updates[`${DB}/applicants/${a.sid}/asgn${i+1}`]=sk;
+    });
+    if(assigned.length>0) assignedCount++;
   });
+
   if(!Object.keys(updates).length){alert('배정 가능한 슬롯이 없습니다.');return;}
-  db.ref().update(updates).then(()=>alert(`자동 배정 완료! ${Object.keys(updates).length/2}명 배정되었습니다.`));
+  db.ref().update(updates).then(()=>alert(`자동 배정 완료! ${assignedCount}명 배정되었습니다.`));
 }
 
 // ── 위클리 캘린더 ─────────────────────────────────────
