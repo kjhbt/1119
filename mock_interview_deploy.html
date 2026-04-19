@@ -977,7 +977,7 @@ function renderSlotList(){
     <div style="padding:6px 0;border-bottom:1px solid #f0f0f0;">
       <span style="font-size:12px;font-weight:600;color:#444;">${dateLabel(date)}</span>
       <span style="margin-left:8px;">${slots.map(s=>{
-        const used=getSlotUsed(s);
+        const used=getSlotUsedByKey(s.key);
         const full=used>=s.max;
         return`<span class="slot-chip ${full?'full':'avail'}" style="margin-right:4px;" onclick="delSlot('${s.key}')" title="클릭하여 삭제">${s.label||s.time} ${used}/${s.max}</span>`;
       }).join('')}</span>
