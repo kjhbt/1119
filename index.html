@@ -649,17 +649,18 @@ function initFirebase(){
 function dbRef(path){ return db.ref(`${DB}/${path}`); }
 
 function loadData(){
-  // 초기 로딩: 6개 데이터를 동시에 받아서 한 번에 렌더
-  const paths=['applicants','teachers','teacher_assigns','blocked_dates','slots','settings'];
-  let loaded=0;
-  const total=paths.length;
+  var received={applicants:false,teachers:false,teacher_assigns:false,blocked_dates:false,slots:false,settings:false};
+  var initialRenderDone=false;
 
-  function onAllLoaded(){
-    // 초기 데이터 모두 도착하면 한 번에 렌더
+  function checkAndRender(){
+    if(initialRenderDone) return;
+    var vals=Object.keys(received).map(function(k){return received[k];});
+    for(var i=0;i<vals.length;i++){if(!vals[i])return;}
+    initialRenderDone=true;
     maxCnt=SETTINGS.maxCnt||3;
-    const el1=document.getElementById('max-cnt-label');
-    const el2=document.getElementById('cur-max-cnt');
-    const el3=document.getElementById('max-cnt-input');
+    var el1=document.getElementById('max-cnt-label');
+    var el2=document.getElementById('cur-max-cnt');
+    var el3=document.getElementById('max-cnt-input');
     if(el1)el1.textContent=maxCnt;
     if(el2)el2.textContent=maxCnt;
     if(el3)el3.value=maxCnt;
@@ -675,73 +676,69 @@ function loadData(){
     document.getElementById('loading-box').style.display='none';
   }
 
-  // 초기 1회 읽기 (once) 후 리스너 등록
-  paths.forEach(function(path){
-    dbRef(path).once('value', function(snap){
-      if(path==='applicants') AP=snap.val()||{};
-      else if(path==='teachers') TC=snap.val()||{};
-      else if(path==='teacher_assigns') TA=snap.val()||{};
-      else if(path==='blocked_dates') BD=snap.val()||{};
-      else if(path==='slots') SLOTS=snap.val()||{};
-      else if(path==='settings') SETTINGS=snap.val()||{};
-      loaded++;
-      if(loaded>=total) onAllLoaded();
-    });
+  dbRef('applicants').on('value',function(snap){
+    AP=snap.val()||{};
+    received.applicants=true;
+    if(!initialRenderDone){checkAndRender();return;}
+    updateStats();
+    var subId=getActiveSubId();
+    if(subId==='sub-students'){syncAdminFilters();renderStudentList();renderAssignDashboard();}
+    else if(subId==='sub-assign'){renderSidebar();renderWcal();renderAssignDashboard();}
+    else if(subId==='sub-schedule') renderSchView();
   });
 
-  // 이후 실시간 업데이트 리스너
-  dbRef('applicants').on('value',function(snap){
-    if(loaded<total)return; // 초기 로딩 중에는 무시
-    AP=snap.val()||{};
-    updateStats();
-    const subId=getActiveSubId();
-    if(subId==='sub-students'){ syncAdminFilters(); renderStudentList(); }
-    if(subId==='sub-assign'){ renderSidebar(); renderWcal(); renderAssignDashboard(); }
-    else if(subId==='sub-students') renderAssignDashboard();
-    if(subId==='sub-schedule') renderSchView();
-  });
   dbRef('teachers').on('value',function(snap){
-    if(loaded<total)return;
     TC=snap.val()||{};
+    received.teachers=true;
+    if(!initialRenderDone){checkAndRender();return;}
     updateStats();
-    const subId=getActiveSubId();
+    var subId=getActiveSubId();
     if(subId==='sub-teachers') renderTeachers();
-    if(subId==='sub-schedule') renderSchView();
+    else if(subId==='sub-schedule') renderSchView();
   });
+
   dbRef('teacher_assigns').on('value',function(snap){
-    if(loaded<total)return;
     TA=snap.val()||{};
-    const subId=getActiveSubId();
-    if(subId==='sub-teachers'){ renderTeacherAssigns(); renderTaWcal(); renderTeachers(); }
+    received.teacher_assigns=true;
+    if(!initialRenderDone){checkAndRender();return;}
+    var subId=getActiveSubId();
+    if(subId==='sub-teachers'){renderTeacherAssigns();renderTaWcal();renderTeachers();}
   });
+
   dbRef('blocked_dates').on('value',function(snap){
-    if(loaded<total)return;
     BD=snap.val()||{};
-    renderCal(); renderBlockedDates();
+    received.blocked_dates=true;
+    if(!initialRenderDone){checkAndRender();return;}
+    renderCal();renderBlockedDates();
   });
+
   dbRef('slots').on('value',function(snap){
-    if(loaded<total)return;
     SLOTS=snap.val()||{};
-    renderSlotList(); renderCal();
-    const subId=getActiveSubId();
+    received.slots=true;
+    if(!initialRenderDone){checkAndRender();return;}
+    renderSlotList();renderCal();
+    var subId=getActiveSubId();
     if(subId==='sub-assign') renderWcal();
   });
+
   dbRef('settings').on('value',function(snap){
-    if(loaded<total)return;
     SETTINGS=snap.val()||{};
+    received.settings=true;
+    if(!initialRenderDone){checkAndRender();return;}
     maxCnt=SETTINGS.maxCnt||3;
-    const el1=document.getElementById('max-cnt-label');
-    const el2=document.getElementById('cur-max-cnt');
-    const el3=document.getElementById('max-cnt-input');
+    var el1=document.getElementById('max-cnt-label');
+    var el2=document.getElementById('cur-max-cnt');
+    var el3=document.getElementById('max-cnt-input');
     if(el1)el1.textContent=maxCnt;
     if(el2)el2.textContent=maxCnt;
     if(el3)el3.value=maxCnt;
-    renderTimeSlotList(); renderPlaceSlotList();
-    const subId=getActiveSubId();
+    renderTimeSlotList();renderPlaceSlotList();
+    var subId=getActiveSubId();
     if(subId==='sub-assign') renderWcal();
     if(subId==='sub-teachers') renderTaWcal();
   });
 }
+
 
 function getActiveSubId(){
   const el=document.querySelector('.sub-sec.active');
