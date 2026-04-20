@@ -640,42 +640,19 @@ let appCnt=1, maxCnt=3;
 
 // ── Firebase ──────────────────────────────────────────
 function initFirebase(){
-  // Firebase SDK 로드 확인
-  if(typeof firebase === 'undefined'){
-    document.getElementById('loading-box').textContent='Firebase SDK 로드 실패. 인터넷 연결을 확인해 주세요.';
-    document.getElementById('loading-box').style.display='block';
-    return;
-  }
   try{
     firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-
-    // 10초 타임아웃 — 그 안에 로딩 안되면 오류 표시
-    var timeoutId=setTimeout(function(){
-      var box=document.getElementById('loading-box');
-      if(box&&box.style.display!=='none'){
-        box.innerHTML='연결 시간 초과. <a href="javascript:location.reload()" style="color:#534AB7;font-weight:700;">새로고침</a>';
-        box.style.display='block';
-      }
-    }, 10000);
-
-    // 연결 상태 감지
-    db.ref('.info/connected').on('value', function(snap){
-      if(!snap.val()){
-        // 연결 안됨 — 타임아웃 전이면 대기
-        console.log('Firebase 연결 대기 중...');
-      }
-    });
-
-    loadData(timeoutId);
+    loadData();
   }catch(e){
-    document.getElementById('loading-box').textContent='Firebase 오류: '+e.message;
-    document.getElementById('loading-box').style.display='block';
+    var box=document.getElementById('loading-box');
+    box.textContent='Firebase 오류: '+e.message;
+    box.style.display='block';
   }
 }
 function dbRef(path){ return db.ref(DB+'/'+path); }
 
-function loadData(timeoutId){
+function loadData(){
   var received={applicants:false,teachers:false,teacher_assigns:false,blocked_dates:false,slots:false,settings:false};
   var initialRenderDone=false;
 
@@ -684,8 +661,6 @@ function loadData(timeoutId){
     var vals=Object.keys(received).map(function(k){return received[k];});
     for(var i=0;i<vals.length;i++){if(!vals[i])return;}
     initialRenderDone=true;
-    // 타임아웃 해제
-    if(timeoutId) clearTimeout(timeoutId);
     maxCnt=SETTINGS.maxCnt||3;
     var el1=document.getElementById('max-cnt-label');
     var el2=document.getElementById('cur-max-cnt');
