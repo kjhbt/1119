@@ -402,8 +402,8 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <div class="fg"><label>이름 *</label><input type="text" id="t-name" placeholder="홍길동"></div>
         <div class="fg"><label>담당 과목 *</label><input type="text" id="t-subj" placeholder="예: 국어, 수학"></div>
         <div class="fg" style="grid-column:1/-1">
-          <label>담당 학급 * <span style="font-weight:400;font-size:11px;color:#888;">(숫자 입력 시 '○반 담임', 글자 입력 시 해당 직책으로 표시. 예: 6 → 6반 담임, 부장 → 부장 선생님)</span></label>
-          <input type="text" id="t-cls" placeholder="예: 6  또는  부장  또는  상담">
+          <label>담당 학급 * <span style="font-weight:400;font-size:11px;color:#888;">(숫자 → O반 담임 / 부장 → 부장 교사 / 없음 → 없음)</span></label>
+          <input type="text" id="t-cls" placeholder="예: 6 또는 부장 또는 없음">
         </div>
         <div class="fg" style="grid-column:1/-1">
           <label>면접 불가 요일 <span style="font-weight:400;font-size:11px;color:#888;">(해당 요일에는 교사 배치 불가)</span></label>
@@ -1039,10 +1039,10 @@ function submitTeacher(){
   const subj=document.getElementById('t-subj').value.trim();
   const cls=document.getElementById('t-cls').value.trim();
   if(!name||!subj||!cls){alert('모든 항목을 입력해 주세요.');return;}
-  // 숫자면 반담임, 글자면 직책
-  const isNum=/^\d+$/.test(cls);
-  const role=isNum?`${cls}반 담임`:cls;
-  const order=isNum?(parseInt(cls)||999):(cls==='부장'?0:998);
+  // 숫자 → O반 담임, '부장' → 부장 교사, 그 외('없음' 포함) → 없음
+  var isNum=/^\d+$/.test(cls);
+  var role=isNum?(cls+'반 담임'):(cls==='부장'?'부장 교사':'없음');
+  var order=isNum?(parseInt(cls)||999):(cls==='부장'?0:998);
   const blockedDays=[];
   ['mon','tue','wed','thu','fri'].forEach((d,i)=>{
     if((document.getElementById(`td-${d}`)&&document.getElementById(`td-${d}`).checked)) blockedDays.push(i+1);
@@ -1081,12 +1081,12 @@ function renderTeachers(){
   if(!list.length){el.innerHTML='<p style="padding:12px 0;font-size:13px;color:#888;">등록된 선생님이 없습니다.</p>';return;}
   const COL='28px 1fr 72px 80px 60px 52px';
   el.innerHTML=`<div style="display:grid;grid-template-columns:${COL};gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #e5e5e0;font-size:11px;color:#888;font-weight:600;">
-    <span>#</span><span>이름/과목</span><span>역할</span><span>불가 요일</span><span style="text-align:center;">배정</span><span></span>
+    <span>#</span><span>이름/과목</span><span>담당 학급</span><span>불가 요일</span><span style="text-align:center;">배정</span><span></span>
   </div>`+
   list.map((t,i)=>{
     const count=getTeacherAssignCount(t.id);
     const isNum=/^\d+$/.test(t.cls||'');
-    const roleLabel=t.role||(isNum?`${t.cls}반 담임`:t.cls);
+    const roleLabel=t.role||(isNum?(t.cls+'반 담임'):(t.cls==='부장'?'부장 교사':'없음'));
     const isPrimary=t.order===0||t.cls==='부장';
     const roleTag=`<span style="${isPrimary?'background:#EEEDFE;color:#3C3489;font-weight:600;':'background:#F1EFE8;color:#444441;'}padding:2px 7px;border-radius:5px;font-size:11px;">${roleLabel}</span>`;
     const dayNames=['월','화','수','목','금'];
@@ -1107,7 +1107,7 @@ function syncTeacherSelects(){
   const list=sortedTeachers();
   const opts='<option value="">선택</option>'+list.map(t=>{
     const isNum=/^\d+$/.test(t.cls||'');
-    const roleLabel=t.role||(isNum?`${t.cls}반 담임`:t.cls);
+    const roleLabel=t.role||(isNum?(t.cls+'반 담임'):(t.cls==='부장'?'부장 교사':'없음'));
     return`<option value="${t.id}">${t.name} (${roleLabel})</option>`;
   }).join('');
   document.querySelectorAll('.ap-tsel').forEach(s=>{const v=s.value;s.innerHTML=opts;s.value=v;});
@@ -2017,7 +2017,7 @@ function renderSchView(){
         });
       const group=filtered.filter(a=>assignedSlotKeys.includes(a.asgn));
       if(!group.length)return;
-      const roleLabel=t.role||((/^\d+$/.test(t.cls||''))?`${t.cls}반 담임`:t.cls);
+      const roleLabel=t.role||((/^\d+$/.test(t.cls||''))?(t.cls+'반 담임'):(t.cls==='부장'?'부장 교사':'없음'));
       html+=`<div class="grp-title tch">${t.name} 선생님 <span style="font-weight:400;font-size:12px;color:#888;">(${roleLabel})</span></div>`;
       html+=buildWeekTable(dates,group);
     });
