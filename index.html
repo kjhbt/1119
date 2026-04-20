@@ -313,7 +313,7 @@ table.data-tbl tr:hover td{background:#fafaf8;}
       <div class="tbl-wrap">
         <table class="data-tbl">
           <thead><tr>
-            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>학교 / 학과</th><th>배정 시간</th><th>장소 / 담당교사</th><th>삭제</th>
+            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>학교 / 학과</th><th>배정 시간 / 장소 / 담당교사</th><th>삭제</th>
           </tr></thead>
           <tbody id="student-tbody"></tbody>
         </table>
@@ -1243,50 +1243,36 @@ function renderStudentList(){
         ${a.school?`<div style="font-weight:600;color:#1a1a18;">${a.school}</div>`:''}
         <div style="color:#666;">${a.major||a.dept||'—'}</div>
       </td>
-      <td style="min-width:160px;">
-        ${Array.from({length:Math.max(1,parseInt(a.appCnt)||1)},(_,i)=>{
-          const roundNum=i+1;
-          const asgnKey=roundNum===1?'asgn':`asgn${roundNum}`;
-          const curSk=a[asgnKey]||'';
-          const curSlot=curSk?SLOTS[curSk]:null;
-          return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
-            <span style="font-size:10px;font-weight:700;color:${roundNum===1?'#534AB7':'#1D9E75'};min-width:22px;">${roundNum}회</span>
-            <select style="font-size:11px;flex:1;" onchange="setAsgnRound('${a.sid}','${asgnKey}',this.value)">
-              <option value="">${curSk?'재배정':'선택'}</option>${slotKeys.map(sk=>{
-                const s=SLOTS[sk];
-                const lbl=s?slotHumanLabel(s):(()=>{const m=sk.match(/^(\d{4})(\d{2})(\d{2})_ts_(\d{2})(\d{2})/);return m?`${+m[2]}월 ${+m[3]}일 ${m[4]}:${m[5]}`:sk;})();
-                return`<option value="${sk}" ${curSk===sk?'selected':''}>${lbl}</option>`;
-              }).join('')}
-            </select>
-            ${curSk?`<button onclick="cancelAssignRound('${a.sid}','${asgnKey}')" style="background:none;border:none;cursor:pointer;color:#D44040;font-size:14px;padding:0;line-height:1;" title="${roundNum}회차 취소">×</button>`:''}
-          </div>`;
-        }).join('')}
-      </td>
-      <td>
+      <td style="min-width:420px;">
         ${Array.from({length:Math.max(1,parseInt(a.appCnt)||1)},(_,i)=>{
           const roundNum=i+1;
           const asgnKey=roundNum===1?'asgn':`asgn${roundNum}`;
           const placeKey=roundNum===1?'place':`place${roundNum}`;
           const t1Key=roundNum===1?'teacher1':`teacher1_${roundNum}`;
           const t2Key=roundNum===1?'teacher2':`teacher2_${roundNum}`;
-          if(!a[asgnKey]) return''; // 배정 안 된 회차는 표시 안 함
+          const curSk=a[asgnKey]||'';
+          const curSlot=curSk?SLOTS[curSk]:null;
           const curPlace=a[placeKey]||'';
           const curT1=a[t1Key]||'';
           const curT2=a[t2Key]||'';
           const placeOptsR=getPlaces().map(pl=>`<option value="${pl.place}" ${curPlace===pl.place?'selected':''}>${pl.place}</option>`).join('');
           const tOptsR=sortedTeachers().map(t=>`<option value="${t.id}" ${curT1===t.id?'selected':''}>${t.name}</option>`).join('');
           const tOpts2R=sortedTeachers().map(t=>`<option value="${t.id}" ${curT2===t.id?'selected':''}>${t.name}</option>`).join('');
-          return`<div style="border-top:${roundNum>1?'1px solid #f0f0ec':'none'};padding-top:${roundNum>1?'6px':'0'};margin-top:${roundNum>1?'6px':'0'};">
-            ${roundNum>1?`<div style="font-size:10px;font-weight:700;color:#1D9E75;margin-bottom:4px;">${roundNum}회차</div>`:''}
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;">
-              <select style="font-size:11px;width:100%;" onchange="setPlaceRound('${a.sid}','${placeKey}',this.value)">
-                <option value="">장소 선택</option>${placeOptsR}
-              </select>
-              <div style="display:flex;gap:3px;">
-                <select style="font-size:11px;flex:1;" onchange="setTeacherRound('${a.sid}','${t1Key}',this.value)"><option value="">교사 1</option>${tOptsR}</select>
-                <select style="font-size:11px;flex:1;" onchange="setTeacherRound('${a.sid}','${t2Key}',this.value)"><option value="">교사 2</option>${tOpts2R}</select>
-              </div>
-            </div>
+          return`<div style="display:flex;align-items:center;gap:5px;${roundNum>1?'border-top:1px solid #f0f0ec;padding-top:5px;margin-top:5px':''}">
+            <span style="font-size:10px;font-weight:700;color:${roundNum===1?'#534AB7':'#1D9E75'};min-width:22px;flex-shrink:0;">${roundNum}회</span>
+            <select style="font-size:11px;width:130px;flex-shrink:0;" onchange="setAsgnRound('${a.sid}','${asgnKey}',this.value)">
+              <option value="">${curSk?'재배정':'선택'}</option>${slotKeys.map(sk=>{
+                const s=SLOTS[sk];
+                const lbl=s?slotHumanLabel(s):(()=>{const m=sk.match(/^(\d{4})(\d{2})(\d{2})_ts_(\d{2})(\d{2})/);return m?`${+m[2]}월 ${+m[3]}일 ${m[4]}:${m[5]}`:sk;})();
+                return`<option value="${sk}" ${curSk===sk?'selected':''}>${lbl}</option>`;
+              }).join('')}
+            </select>
+            ${curSk?`<button onclick="cancelAssignRound('${a.sid}','${asgnKey}')" style="background:none;border:none;cursor:pointer;color:#D44040;font-size:14px;padding:0;flex-shrink:0;" title="${roundNum}회차 취소">×</button>`:'<span style="width:14px;flex-shrink:0;"></span>'}
+            <select style="font-size:11px;flex:1;min-width:70px;" onchange="setPlaceRound('${a.sid}','${placeKey}',this.value)">
+              <option value="">장소</option>${placeOptsR}
+            </select>
+            <select style="font-size:11px;flex:1;min-width:60px;" onchange="setTeacherRound('${a.sid}','${t1Key}',this.value)"><option value="">교사1</option>${tOptsR}</select>
+            <select style="font-size:11px;flex:1;min-width:60px;" onchange="setTeacherRound('${a.sid}','${t2Key}',this.value)"><option value="">교사2</option>${tOpts2R}</select>
           </div>`;
         }).join('')}
       </td>
