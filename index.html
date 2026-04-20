@@ -703,7 +703,7 @@ function getSlotsForDate(dateK){
 }
 // 지원자의 모든 선택 slotKey 배열 반환
 function getApplicantSlotKeys(a){
-  return Object.keys(a.times||{}).flatMap(dk=>a.times[dk]||[]);
+  return Object.keys(a.times||{}).reduce(function(acc,dk){return acc.concat(a.times[dk]||[]);}, []);
 }
 function getSlotUsedByKey(tk){
   return Object.values(AP).filter(a=>a.asgn===tk).length;
@@ -726,7 +726,7 @@ function renderCal(){
     const k=dateKey(calYear,calMonth,d);
     const wk=dow===0||dow===6;
     const past=dt<new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate());
-    const blocked=!!BD[k.replaceAll('-','')];
+    const blocked=!!BD[k.replace(/-/g,'')];
     const daySlots=getSlotsForDate(k);
     const hasSlot=daySlots.length>0;
     const selKeys=selTimes[k]||[];
@@ -800,11 +800,11 @@ function renderTimeTags(){
   const keys=Object.keys(selTimes).sort();
   const el=document.getElementById('time-tags');
   if(!keys.length){el.innerHTML='<span style="font-size:12px;color:#888;">선택된 시간 없음</span>';return;}
-  el.innerHTML=keys.flatMap(k=>(selTimes[k]||[]).map(slotK=>{
+  el.innerHTML=[].concat.apply([],keys.map(k=>(selTimes[k]||[]).map(slotK=>{
     const slot=SLOTS[slotK];
     const lbl=slot?`${dateLabel(k)} ${slot.label||slot.time}`:slotK;
     return`<span class="ttag">${lbl}<button onclick="removeTime('${k}','${slotK}')">×</button></span>`;
-  })).join('');
+  }))).join('');
 }
 
 // ── 면접 횟수 ─────────────────────────────────────────
@@ -919,9 +919,9 @@ function applyDateRange(){
     const dow=cur.getDay();
     if(dow!==0&&dow!==6){
       const dk=dateKey(cur.getFullYear(),cur.getMonth(),cur.getDate());
-      if(!BD[dk.replaceAll('-','')]){
+      if(!BD[dk.replace(/-/g,'')]){
         times.forEach(t=>{
-          const k=`${dk.replaceAll('-','')}_${t.key}`;
+          const k=`${dk.replace(/-/g,'')}_${t.key}`;
           updates[`${DB}/slots/${k}`]={date:dk,timeKey:t.key,time:t.time,label:t.label,max:places.length,key:k};
         });
       }
@@ -973,7 +973,7 @@ function submitTeacher(){
   const order=isNum?(parseInt(cls)||999):(cls==='부장'?0:998);
   const blockedDays=[];
   ['mon','tue','wed','thu','fri'].forEach((d,i)=>{
-    if(document.getElementById(`td-${d}`)?.checked) blockedDays.push(i+1);
+    if((document.getElementById(`td-${d}`)&&document.getElementById(`td-${d}`).checked)) blockedDays.push(i+1);
   });
   const id='t_'+Date.now();
   dbRef(`teachers/${id}`).set({id,name,subj,cls,role,order,blockedDays}).then(()=>{
@@ -1062,7 +1062,7 @@ function renderTaWcal(){
       dates.forEach(d=>{
         const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
         const dow=d.getDay();
-        const slotK=`${dk.replaceAll('-','')}_${t.key}`;
+        const slotK=`${dk.replace(/-/g,'')}_${t.key}`;
         // 이 슬롯에 배정된 학생들
         const studs=Object.values(AP).filter(a=>a.asgn===slotK);
         const places=getPlaces();
@@ -1123,7 +1123,7 @@ function saveAllTaAssigns(){
       places.forEach((pl,i)=>{
         const s1=document.getElementById(`ta_${dk}_${t.key}_${i}_t1`);
         const s2=document.getElementById(`ta_${dk}_${t.key}_${i}_t2`);
-        const t1=s1?.value||'',t2=s2?.value||'';
+        const t1=(s1&&s1.value)||'',t2=(s2&&s2.value)||'';
         if(t1||t2){
           const taKey=`ta_${dk}_${t.key}_${i}`;
           updates[`${DB}/teacher_assigns/${taKey}`]={date:dk,timeKey:t.key,time:t.time,label:t.label,place:pl.place,t1,t2,key:taKey};
@@ -1196,8 +1196,8 @@ function renderStudentList(){
   const fa=document.getElementById('fg-asgn').value;
   const list=Object.values(AP).filter(a=>{
     const p=parseSid(a.sid);
-    if(fg&&p?.grade!==fg)return false;
-    if(fc&&p?.cls!==fc)return false;
+    if(fg&&(p&&p.grade)!==fg)return false;
+    if(fc&&(p&&p.cls)!==fc)return false;
     if(ft&&a.type!==ft)return false;
     if(fa==='y'&&!a.asgn)return false;
     if(fa==='n'&&a.asgn)return false;
@@ -1214,7 +1214,7 @@ function renderStudentList(){
 
     // 가능 슬롯 키 — SLOTS에 없는 것도 포함해 표시
     const slotKeys=getApplicantSlotKeys(a)
-      .sort((x,y)=>(SLOTS[x]?.date||x).localeCompare(SLOTS[y]?.date||y)||(SLOTS[x]?.time||'').localeCompare(SLOTS[y]?.time||''));
+      .sort((x,y)=>((SLOTS[x]&&SLOTS[x].date)||x).localeCompare((SLOTS[y]&&SLOTS[y].date)||y)||((SLOTS[x]&&SLOTS[x].time)||'').localeCompare((SLOTS[y]&&SLOTS[y].time)||''));
 
     const timeOpts=slotKeys.map(sk=>{
       const s=SLOTS[sk];
@@ -1292,7 +1292,7 @@ function slotHumanLabel(slot){
 }
 
 function cancelAssignRound(sid, asgnKey){
-  if(!confirm(`${AP[sid]?.name||sid}의 ${asgnKey==='asgn'?'1':asgnKey.replace('asgn','')}회차 배정을 취소하시겠습니까?`))return;
+  if(!confirm(`${(AP[sid]&&AP[sid].name)||sid}의 ${asgnKey==='asgn'?'1':asgnKey.replace('asgn','')}회차 배정을 취소하시겠습니까?`))return;
   const roundNum=asgnKey==='asgn'?1:parseInt(asgnKey.replace('asgn',''));
   const placeKey=roundNum===1?'place':`place${roundNum}`;
   const t1Key=roundNum===1?'teacher1':`teacher1_${roundNum}`;
@@ -1306,7 +1306,7 @@ function cancelAssignRound(sid, asgnKey){
   db.ref().update(updates);
 }
 function cancelAssign(sid){ // 전체 배정 취소 (초기화용)
-  if(!confirm(`${AP[sid]?.name||sid}의 배정을 취소하시겠습니까?`))return;
+  if(!confirm(`${(AP[sid]&&AP[sid].name)||sid}의 배정을 취소하시겠습니까?`))return;
   const updates={[`${DB}/applicants/${sid}/asgn`]:'', [`${DB}/applicants/${sid}/place`]:''};
   for(let i=2;i<=5;i++) updates[`${DB}/applicants/${sid}/asgn${i}`]=null;
   db.ref().update(updates);
@@ -1318,7 +1318,7 @@ function setAsgnRound(sid, asgnKey, v){
   if(asgnKey==='asgn'){
     const places=getPlaces();
     const used=v?getSlotUsedByKey(v):0;
-    const place=places[used%(places.length||4)]?.place||'';
+    const place=(places[used%(places.length||4)]&&places[used%(places.length||4)].place)||'';
     if(v) updates[`${DB}/applicants/${sid}/place`]=place;
   }
   db.ref().update(updates);
@@ -1328,7 +1328,7 @@ function setPlaceRound(sid, placeKey, v){ dbRef(`applicants/${sid}/${placeKey}`)
 function setTeacherRound(sid, tKey, v){ dbRef(`applicants/${sid}/${tKey}`).set(v||'').then(()=>renderTeachers()); }
 function setPlace(sid,v){ setPlaceRound(sid,'place',v); }
 function setTeacher(sid,slot,v){ setTeacherRound(sid,`teacher${slot}`,v); }
-function delApplicant(sid){ if(confirm(`${AP[sid]?.name||sid} 지원자를 삭제하시겠습니까?`)) dbRef(`applicants/${sid}`).remove(); }
+function delApplicant(sid){ if(confirm(`${(AP[sid]&&AP[sid].name)||sid} 지원자를 삭제하시겠습니까?`)) dbRef(`applicants/${sid}`).remove(); }
 
 // ── 배정 대시보드 ─────────────────────────────────────
 function renderAssignDashboard(){
@@ -1455,7 +1455,7 @@ function runAssignEngine(strategy, opts){
   targets.filter(a=>!a.asgn).forEach(a=>{
     const r=resultMap[a.sid];
     const slotKeys=getSortedSlotKeys(a, beforeInterview);
-    const usedDates=new Set(r.assigned.map(x=>SLOTS[x.sk]?.date).filter(Boolean));
+    const usedDates=new Set(r.assigned.map(x=>(SLOTS[x.sk]&&SLOTS[x.sk].date)).filter(Boolean));
     for(const sk of slotKeys){
       const slot=SLOTS[sk];
       if(!slot)continue;
@@ -1463,7 +1463,7 @@ function runAssignEngine(strategy, opts){
       const used=slotCounter[sk]||0;
       if(used>=slot.max)continue;
       const placeIdx=used%(places.length||4);
-      r.assigned.push({sk, place:places[placeIdx]?.place||''});
+      r.assigned.push({sk, place:(places[placeIdx]&&places[placeIdx].place)||''});
       slotCounter[sk]=(slotCounter[sk]||0)+1;
       break;
     }
@@ -1484,7 +1484,7 @@ function runAssignEngine(strategy, opts){
     if(r.assigned.length>=wantCnt)return;
 
     const need=wantCnt-r.assigned.length;
-    const assignedDates=new Set(r.assigned.map(x=>SLOTS[x.sk]?.date).filter(Boolean));
+    const assignedDates=new Set(r.assigned.map(x=>(SLOTS[x.sk]&&SLOTS[x.sk].date)).filter(Boolean));
 
     const candidates=getSortedSlotKeys(a, beforeInterview).filter(sk=>{
       const slot=SLOTS[sk];
@@ -1505,7 +1505,7 @@ function runAssignEngine(strategy, opts){
       const used=slotCounter[sk]||0;
       if(used>=slot.max)return;
       const placeIdx=used%(places.length||4);
-      r.assigned.push({sk, place:places[placeIdx]?.place||''});
+      r.assigned.push({sk, place:(places[placeIdx]&&places[placeIdx].place)||''});
       assignedDates.add(slot.date);
       slotCounter[sk]=(slotCounter[sk]||0)+1;
     });
@@ -1528,7 +1528,7 @@ function pickEvenlySpaced(candidates, n, alreadyDates){
   if(n<=0) return [];
 
   // 후보 날짜 목록
-  const candDates=candidates.map(sk=>({sk, date:SLOTS[sk]?.date||''}))
+  const candDates=candidates.map(sk=>({sk, date:(SLOTS[sk]&&SLOTS[sk].date)||''}))
     .sort((a,b)=>a.date.localeCompare(b.date));
 
   // 이미 배정된 날짜 포함한 전체 날짜 범위
@@ -1552,7 +1552,7 @@ function pickEvenlySpaced(candidates, n, alreadyDates){
 
   for(let i=0;i<n;i++){
     if(!remaining.length)break;
-    const currentDates=[...alreadyDates, ...selected.map(sk=>SLOTS[sk]?.date||'')].sort();
+    const currentDates=[...alreadyDates, ...selected.map(sk=>(SLOTS[sk]&&SLOTS[sk].date)||'')].sort();
     // 각 후보 슬롯의 "추가 시 간격 균등성" 점수
     let best=null, bestScore=Infinity;
     remaining.forEach(({sk,date})=>{
@@ -1582,7 +1582,7 @@ function sortTargets(targets, strategy){
     case 'balance':
       return targets.sort((a,b)=>{
         const aKeys=getApplicantSlotKeys(a).filter(sk=>SLOTS[sk]).length;
-        const bKeys=Object.keys(b.times||{}).flatMap(dk=>b.times[dk]||[]).filter(sk=>SLOTS[sk]).length;
+        const bKeys=getApplicantSlotKeys(b).filter(function(sk){return SLOTS[sk];}).length;
         return aKeys-bKeys;
       });
     case 'optimal':
@@ -1602,7 +1602,7 @@ function getSortedSlotKeys(a, beforeInterview){
     })
     .sort((x,y)=>{
       const sx=SLOTS[x],sy=SLOTS[y];
-      return (sx?.date||'').localeCompare(sy?.date||'')||(sx?.time||'').localeCompare(sy?.time||'');
+      return ((sx&&sx.date)||'').localeCompare((sy&&sy.date)||'')||((sx&&sx.time)||'').localeCompare((sy&&sy.time)||'');
     });
 }
 
@@ -1613,7 +1613,7 @@ function diagnoseFail(a, slotKeys, slotCounter, beforeInterview){
   if(beforeInterview&&a.interviewDate&&slotKeys.every(sk=>{
     const slot=SLOTS[sk];return slot&&slot.date>=a.interviewDate;
   })) return '면접일 이전 슬롯 없음';
-  if(slotKeys.every(sk=>(slotCounter[sk]||0)>=(SLOTS[sk]?.max||0))) return '슬롯 모두 마감';
+  if(slotKeys.every(sk=>(slotCounter[sk]||0)>=((SLOTS[sk]&&SLOTS[sk].max)||0))) return '슬롯 모두 마감';
   return '슬롯 여유 없음';
 }
 
@@ -1709,7 +1709,7 @@ function confirmAutoAssign(){
       const roundNum=idx+1;
       const asgnKey=roundNum===1?'asgn':`asgn${roundNum}`;
       const placeKey=roundNum===1?'place':`place${roundNum}`;
-      const existingSk=roundNum===1?a?.asgn:a?.[`asgn${roundNum}`];
+      const existingSk=roundNum===1?(a&&a.asgn):(a&&a[`asgn${roundNum}`]);
       if(existingSk===sk)return;
       updates[`${DB}/applicants/${r.sid}/${asgnKey}`]=sk;
       updates[`${DB}/applicants/${r.sid}/${placeKey}`]=place; // 모든 회차 장소 저장
@@ -1771,10 +1771,10 @@ function renderWcal(){
     h+=`<tr><td class="plbl" style="font-size:10px;line-height:1.4;">${t.label||t.time}</td>`;
     dates.forEach(d=>{
       const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
-      const slotK=`${dk.replaceAll('-','')}_${t.key}`;
+      const slotK=`${dk.replace(/-/g,'')}_${t.key}`;
       const slot=SLOTS[slotK];
       const used=getSlotUsedByKey(slotK);
-      const max=slot?.max||0;
+      const max=(slot&&slot.max)||0;
       const pct=max?Math.round(used/max*100):0;
       const barCls=pct>=100?'full':pct>=70?'near':'ok';
 
@@ -1782,19 +1782,19 @@ function renderWcal(){
         h+=`<td style="background:#fafaf8;"><div style="padding:4px;font-size:9px;color:#ccc;text-align:center;">—</div></td>`;
       } else {
         // asgn, asgn2, asgn3... 모두 이 슬롯에 배정된 학생 수집
-        const chipsHtml=Object.values(AP).flatMap(a=>{
+        const chipsHtml=[].concat.apply([],Object.values(AP).map(function(a){
           const rounds=[];
-          if(a.asgn===slotK) rounds.push({a,round:1,key:'asgn'});
-          for(let i=2;i<=5;i++) if(a[`asgn${i}`]===slotK) rounds.push({a,round:i,key:`asgn${i}`});
+          if(a.asgn===slotK) rounds.push({a:a,round:1,key:'asgn'});
+          for(let i=2;i<=5;i++) if(a['asgn'+i]===slotK) rounds.push({a:a,round:i,key:'asgn'+i});
           return rounds;
-        }).map(({a,round,key})=>`
+        })).map(function(r){var a=r.a,round=r.round,key=r.key; return`
           <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" style="display:flex;align-items:center;justify-content:space-between;gap:2px;">
             <span onclick="showChipModal('${a.sid}','${slotK}')" style="cursor:pointer;flex:1;">
               ${a.name}${(a.appCnt||1)>1?`<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;margin-left:2px;">${round}회</span>`:''}
               ${a.place?`<br><span style="font-size:9px;opacity:.7;">${a.place}</span>`:''}
             </span>
             <button onclick="cancelAssignRound('${a.sid}','${key}')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;" title="배정 취소">×</button>
-          </div>`).join('');
+          </div>`}).join('');
         h+=`<td>
           <div style="font-size:9px;color:#888;display:flex;justify-content:space-between;margin-bottom:3px;padding:0 2px;">
             <span>${used}/${max}명</span>
@@ -1842,7 +1842,7 @@ function renderSidebar(){
   needMore.sort((a,b)=>a.sid.localeCompare(b.sid)).forEach(a=>{
     const wantCnt=Math.max(1,parseInt(a.appCnt)||1);
     const slotKeys=getApplicantSlotKeys(a)
-      .sort((x,y)=>(SLOTS[x]?.date||'').localeCompare(SLOTS[y]?.date||''));
+      .sort((x,y)=>((SLOTS[x]&&SLOTS[x].date)||'').localeCompare((SLOTS[y]&&SLOTS[y].date)||''));
     const labels=slotKeys.slice(0,2).map(sk=>{const s=SLOTS[sk];return s?slotHumanLabel(s):'';}).filter(Boolean);
 
     for(let i=0;i<wantCnt;i++){
@@ -1899,7 +1899,7 @@ function onDrop(e,sk){
 
   const places=getPlaces();
   const placeIdx=used%(places.length||4);
-  const place=places[placeIdx]?.place||'';
+  const place=(places[placeIdx]&&places[placeIdx].place)||'';
   const updates={[`${DB}/applicants/${dragStudentId}/${targetKey}`]:sk};
   if(targetKey==='asgn') updates[`${DB}/applicants/${dragStudentId}/place`]=place;
   db.ref().update(updates).then(()=>{dragStudentId=null;dragAsgnKey='asgn';});
@@ -1915,11 +1915,11 @@ function renderSchView(){
   const filtered=Object.values(AP).filter(a=>a.asgn&&(!ft||a.type===ft));
 
   if(view==='cls'){
-    const keys=[...new Set(filtered.map(a=>parseSid(a.sid)?.key).filter(Boolean))].sort();
+    const keys=[...new Set(filtered.map(a=>(parseSid(a.sid)&&parseSid(a.sid).key)).filter(Boolean))].sort();
     let html='';
     keys.forEach(k=>{
       const[g,c]=k.split('-');
-      const group=filtered.filter(a=>parseSid(a.sid)?.key===k);
+      const group=filtered.filter(a=>(parseSid(a.sid)&&parseSid(a.sid).key)===k);
       if(!group.length)return;
       html+=`<div class="grp-title cls">${g}학년 ${c}반</div>`;
       html+=buildWeekTable(dates,group);
@@ -1934,7 +1934,7 @@ function renderSchView(){
       const assignedSlotKeys=Object.values(TA)
         .filter(ta=>ta.t1===t.id||ta.t2===t.id)
         .map(ta=>{ // ta의 slotKey 재구성
-          const dk=ta.date.replaceAll('-','');
+          const dk=ta.date.replace(/-/g,'');
           return`${dk}_${ta.timeKey||''}`;
         });
       const group=filtered.filter(a=>assignedSlotKeys.includes(a.asgn));
@@ -1962,7 +1962,7 @@ function buildWeekTable(dates, students){
       h+=`<tr><td class="plbl" style="font-size:10px;line-height:1.4;">${t.label||t.time}</td>`;
       dates.forEach(d=>{
         const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
-        const slotK=`${dk.replaceAll('-','')}_${t.key}`;
+        const slotK=`${dk.replace(/-/g,'')}_${t.key}`;
         const chips=students.filter(a=>a.asgn===slotK).map(a=>`
           <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
             ${a.name}${a.place?`<br><span style="font-size:9px;opacity:.7;">${a.place}</span>`:''}
@@ -1985,9 +1985,9 @@ function showChipModal(sid,sk){
   const slot=SLOTS[sk];
   const assignLabel=slot?slotHumanLabel(slot):(sk||'');
   modalCtx={sid,sk};
-  const extraHtml=a.extra?.univQ
+  const extraHtml=(a.extra&&a.extra.univQ)
     ?`<div class="dr" style="flex-direction:column;gap:4px;"><span class="dl">대학 자체 질문</span><span style="font-size:12px;color:#888;">${a.extra.univQ}</span></div>`
-    :a.extra?.mmiSchool
+    :(a.extra&&a.extra.mmiSchool)
     ?`<div class="dr"><span class="dl">MMI 학교/과목</span><span>${a.extra.mmiSchool} / ${a.extra.mmiSubject||''}</span></div>`
     :'';
   document.getElementById('modal-title').textContent=`${a.name} 배정 정보`;
@@ -2021,7 +2021,7 @@ function addBlockedDate(){
   const raw=document.getElementById('bd-date').value;
   const reason=document.getElementById('bd-reason').value.trim();
   if(!raw){alert('날짜를 선택해 주세요.');return;}
-  const key=raw.replaceAll('-','');
+  const key=raw.replace(/-/g,'');
   dbRef(`blocked_dates/${key}`).set({date:raw,key,reason:reason||'',addedAt:Date.now()})
     .then(()=>{document.getElementById('bd-date').value='';document.getElementById('bd-reason').value='';flash('bd-ok');})
     .catch(e=>alert('저장 실패: '+e.message));
@@ -2050,7 +2050,7 @@ function renderBdCal(){
     const dt=new Date(bdCalYear,bdCalMonth,d);
     const dow=dt.getDay();
     const k=dateKey(bdCalYear,bdCalMonth,d);
-    const blocked=!!BD[k.replaceAll('-','')];
+    const blocked=!!BD[k.replace(/-/g,'')];
     let cls='cday';
     if(blocked)cls+=' blocked';
     else if(dow===0||dow===6)cls+=' dis';
@@ -2089,122 +2089,63 @@ function printSchedule(){
 }
 
 // ── 엑셀(.xlsx) 내보내기 — 순수 JS 구현 ──────────────
+// ── 엑셀 내보내기 (HTML Table → .xls) ────────────────
 function exportExcel(){
-  const apList=Object.values(AP).filter(a=>a.asgn);
+  var apList=Object.values(AP).filter(function(a){return a.asgn;});
   if(!apList.length){alert('배정된 지원자가 없습니다.');return;}
 
-  const header=['년도','월','일','시간','학번','이름','대학','학과명','전형','담당교사1','담당교사2','장소'];
-  const dataRows=apList.sort((a,b)=>{
-    const sa=SLOTS[a.asgn],sb=SLOTS[b.asgn];
-    return (sa?.date||'').localeCompare(sb?.date||'')||(sa?.time||'').localeCompare(sb?.time||'');
-  }).flatMap(a=>{
-    const result=[];
-    for(let i=1;i<=5;i++){
-      const sk=i===1?a.asgn:a[`asgn${i}`];
+  var header=['년도','월','일','시간','학번','이름','대학','학과명','전형','담당교사1','담당교사2','장소'];
+  var dataRows=[].concat.apply([],apList.sort(function(a,b){
+    var sa=SLOTS[a.asgn],sb=SLOTS[b.asgn];
+    return ((sa&&sa.date)||'').localeCompare((sb&&sb.date)||'')||((sa&&sa.time)||'').localeCompare((sb&&sb.time)||'');
+  }).map(function(a){
+    var result=[];
+    for(var i=1;i<=5;i++){
+      var sk=i===1?a.asgn:a['asgn'+i];
       if(!sk)break;
-      const s=SLOTS[sk];
-      let yr='',mo='',dy='',ts='';
-      if(s){const[y,m,d]=s.date.split('-');yr=+y;mo=+m;dy=+d;ts=s.time||'';}
-      const placeKey=i===1?'place':`place${i}`;
-      const t1Key=i===1?'teacher1':`teacher1_${i}`;
-      const t2Key=i===1?'teacher2':`teacher2_${i}`;
-      const tc1=TC[a[t1Key]],tc2=TC[a[t2Key]];
+      var s=SLOTS[sk];
+      var yr='',mo='',dy='',ts='';
+      if(s){var parts=s.date.split('-');yr=+parts[0];mo=+parts[1];dy=+parts[2];ts=s.time||'';}
+      var placeKey=i===1?'place':'place'+i;
+      var t1Key=i===1?'teacher1':'teacher1_'+i;
+      var t2Key=i===1?'teacher2':'teacher2_'+i;
+      var tc1=TC[a[t1Key]],tc2=TC[a[t2Key]];
       result.push([yr,mo,dy,ts,a.sid,a.name,a.school||'',a.major||a.dept||'',a.type||'',tc1?tc1.name:'',tc2?tc2.name:'',a[placeKey]||'']);
     }
     return result;
-  });
+  }));
 
-  const allRows=[header,...dataRows];
-  const colWidths=[6,4,4,12,8,8,14,14,12,8,8,12];
+  function esc(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-  // XML 문자 이스케이프
-  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-  // 공유 문자열 테이블 구성
-  const strs=[]; const strIdx={};
-  const si=v=>{const s=String(v);if(strIdx[s]===undefined){strIdx[s]=strs.length;strs.push(s);}return strIdx[s];};
-
-  // 셀 생성
-  const colLetter=c=>{let r='';c++;while(c>0){r=String.fromCharCode(65+(c-1)%26)+r;c=Math.floor((c-1)/26);}return r;};
-  let sheetXml='<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
-  allRows.forEach((row,ri)=>{
-    sheetXml+=`<row r="${ri+1}">`;
-    row.forEach((val,ci)=>{
-      const cell=colLetter(ci)+(ri+1);
-      if(typeof val==='number'&&val!==''){
-        sheetXml+=`<c r="${cell}" t="n"><v>${val}</v></c>`;
-      } else {
-        const idx=si(val);
-        sheetXml+=`<c r="${cell}" t="s"><v>${idx}</v></c>`;
-      }
-    });
-    sheetXml+='</row>';
-  });
-  sheetXml+='</sheetData>';
-  // 열 너비
-  sheetXml+='<cols>'+colWidths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')+'</cols>';
-  sheetXml+='</worksheet>';
-
-  const sst='<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="'+strs.length+'" uniqueCount="'+strs.length+'">'+strs.map(s=>`<si><t>${esc(s)}</t></si>`).join('')+'</sst>';
-  const wb='<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="모의면접 배정" sheetId="1" r:id="rId1"/></sheets></workbook>';
-  const wbRels='<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>';
-  const contentTypes='<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>';
-  const rels='<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
-
-  // ZIP 생성 (JSZip 없이 수동 구현)
-  const enc=new TextEncoder();
-  const files={
-    '[Content_Types].xml':enc.encode(contentTypes),
-    '_rels/.rels':enc.encode(rels),
-    'xl/workbook.xml':enc.encode(wb),
-    'xl/_rels/workbook.xml.rels':enc.encode(wbRels),
-    'xl/worksheets/sheet1.xml':enc.encode(sheetXml),
-    'xl/sharedStrings.xml':enc.encode(sst)
-  };
-
-  // 간단한 ZIP 빌더
-  function makeZip(files){
-    const u32=(n)=>[n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF];
-    const u16=(n)=>[n&0xFF,(n>>8)&0xFF];
-    function crc32(buf){
-      let c=0xFFFFFFFF;
-      const t=new Uint32Array(256);
-      for(let i=0;i<256;i++){let v=i;for(let j=0;j<8;j++)v=v&1?0xEDB88320^(v>>>1):v>>>1;t[i]=v;}
-      for(const b of buf)c=t[(c^b)&0xFF]^(c>>>8);
-      return(c^0xFFFFFFFF)>>>0;
-    }
-    const parts=[];let offset=0;const central=[];
-    for(const[name,data] of Object.entries(files)){
-      const nameBytes=new TextEncoder().encode(name);
-      const crc=crc32(data);
-      const local=[0x50,0x4B,0x03,0x04,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(data.length),...u32(data.length),...u16(nameBytes.length),0,0,...nameBytes,...data];
-      const localArr=new Uint8Array(local);
-      central.push({name:nameBytes,crc,size:data.length,offset});
-      parts.push(localArr);
-      offset+=localArr.length;
-    }
-    const centralParts=central.map(({name,crc,size,offset})=>new Uint8Array([0x50,0x4B,0x01,0x02,20,0,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(size),...u32(size),...u16(name.length),0,0,0,0,0,0,0,0,0,0,0,...u32(offset),...name]));
-    const centralSize=centralParts.reduce((s,p)=>s+p.length,0);
-    const eocd=new Uint8Array([0x50,0x4B,0x05,0x06,0,0,0,0,...u16(central.length),...u16(central.length),...u32(centralSize),...u32(offset),0,0]);
-    const total=parts.reduce((s,p)=>s+p.length,0)+centralSize+eocd.length;
-    const out=new Uint8Array(total);
-    let pos=0;
-    for(const p of parts){out.set(p,pos);pos+=p.length;}
-    for(const p of centralParts){out.set(p,pos);pos+=p.length;}
-    out.set(eocd,pos);
-    return out;
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  html+='<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+  html+='<x:Name>모의면접 배정</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
+  html+='</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+  html+='<style>th{background:#534AB7;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #ccc;white-space:nowrap;}';
+  html+='td{padding:5px 10px;border:1px solid #ccc;white-space:nowrap;}</style></head>';
+  html+='<body><table border="1" style="border-collapse:collapse;font-family:Arial;">';
+  html+='<tr>';
+  for(var hi=0;hi<header.length;hi++){html+='<th>'+esc(header[hi])+'</th>';}
+  html+='</tr>';
+  for(var ri=0;ri<dataRows.length;ri++){
+    html+='<tr style="background:'+(ri%2===0?'#ffffff':'#f5f5f5')+'">';
+    for(var ci=0;ci<dataRows[ri].length;ci++){html+='<td>'+esc(dataRows[ri][ci])+'</td>';}
+    html+='</tr>';
   }
+  html+='</table></body></html>';
 
-  const zipData=makeZip(files);
-  const blob=new Blob([zipData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const d=new Date();
-  a.href=url;
-  a.download=`모의면접_배정표_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  var blob=new Blob(['\uFEFF'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  var d=new Date();
+  link.href=url;
+  link.download='모의면접_배정표_'+d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)+'.xls';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
 
 function flash(id){const b=document.getElementById(id);if(!b)return;b.style.display='block';setTimeout(()=>b.style.display='none',3500);}
 function showErr(id,msg){const b=document.getElementById(id);if(!b)return;b.textContent=msg;b.style.display='block';setTimeout(()=>b.style.display='none',4000);}
