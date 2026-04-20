@@ -1278,13 +1278,13 @@ function renderStudentList(){
           const tOpts2R=sortedTeachers().map(t=>`<option value="${t.id}" ${curT2===t.id?'selected':''}>${t.name}</option>`).join('');
           return`<div style="border-top:${roundNum>1?'1px solid #f0f0ec':'none'};padding-top:${roundNum>1?'6px':'0'};margin-top:${roundNum>1?'6px':'0'};">
             ${roundNum>1?`<div style="font-size:10px;font-weight:700;color:#1D9E75;margin-bottom:4px;">${roundNum}회차</div>`:''}
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;">
               <select style="font-size:11px;width:100%;" onchange="setPlaceRound('${a.sid}','${placeKey}',this.value)">
                 <option value="">장소 선택</option>${placeOptsR}
               </select>
-              <div style="display:flex;flex-direction:column;gap:3px;">
-                <select style="font-size:11px;width:100%;" onchange="setTeacherRound('${a.sid}','${t1Key}',this.value)"><option value="">교사 1</option>${tOptsR}</select>
-                <select style="font-size:11px;width:100%;" onchange="setTeacherRound('${a.sid}','${t2Key}',this.value)"><option value="">교사 2</option>${tOpts2R}</select>
+              <div style="display:flex;gap:3px;">
+                <select style="font-size:11px;flex:1;" onchange="setTeacherRound('${a.sid}','${t1Key}',this.value)"><option value="">교사 1</option>${tOptsR}</select>
+                <select style="font-size:11px;flex:1;" onchange="setTeacherRound('${a.sid}','${t2Key}',this.value)"><option value="">교사 2</option>${tOpts2R}</select>
               </div>
             </div>
           </div>`;
