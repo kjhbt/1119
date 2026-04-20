@@ -173,6 +173,7 @@ table.data-tbl tr:hover td{background:#fafaf8;}
   .admin-layout{grid-template-columns:1fr;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -325,12 +326,13 @@ table.data-tbl tr:hover td{background:#fafaf8;}
       <select id="fg-asgn" onchange="renderStudentList()">
         <option value="">전체</option><option value="y">완료</option><option value="n">미배정</option>
       </select>
+      <button class="btn btn-s" onclick="exportExcel()" style="margin-left:auto;font-size:12px;white-space:nowrap;">📥 엑셀 내보내기</button>
     </div>
     <div class="card" style="padding:0;">
       <div class="tbl-wrap">
         <table class="data-tbl">
           <thead><tr>
-            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>학과</th><th>배정 시간</th><th>장소</th><th>담당교사</th><th>삭제</th>
+            <th>학번</th><th>이름 / 유형</th><th>희망</th><th>학교 / 학과</th><th>배정 시간</th><th>장소</th><th>담당교사</th><th>삭제</th>
           </tr></thead>
           <tbody id="student-tbody"></tbody>
         </table>
@@ -651,7 +653,7 @@ let AP={}, TC={}, TA={}, BD={}, SLOTS={}, SETTINGS={};
 let calYear=TODAY.getFullYear(), calMonth=TODAY.getMonth();
 let focusDate=null, selTimes={};
 let weekOffset=0, schWeekOffset=0, taWeekOffset=0;
-let dragStudentId=null, modalCtx=null;
+let modalCtx=null;
 let db, curMode;
 let appCnt=1, maxCnt=3;
 
@@ -833,8 +835,8 @@ function changeCnt(d){
 // ── 면접 유형 변경 ────────────────────────────────────
 function onTypeChange(){
   const t=document.getElementById('f-type').value;
-  document.getElementById('mmi-extra').style.display=t==='MMI'?'block':'none';
-  document.getElementById('present-extra').style.display=t==='제시문'?'block':'none';
+  document.getElementById('mmi-extra').style.display='none';
+  document.getElementById('present-extra').style.display='none';
   document.getElementById('univ-extra').style.display=t==='대학 자체 질문'?'block':'none';
 }
 
@@ -853,17 +855,9 @@ function submitApply(){
   if(!/^\d{4,5}$/.test(sid)){showErr('apply-err','학번은 4~5자리 숫자여야 합니다.');return;}
   if(!parseSid(sid)){showErr('apply-err','올바른 학번 형식이 아닙니다.');return;}
   if(!Object.keys(timesObj).length){showErr('apply-err','가능한 날짜와 시간을 선택해 주세요.');return;}
-  if(type==='MMI'){
-    if(!document.getElementById('f-mmi-school').value.trim()||!document.getElementById('f-mmi-subject').value.trim()){showErr('apply-err','MMI 학교명과 과목명을 입력해 주세요.');return;}
-  }
-  if(type==='제시문'){
-    if(!document.getElementById('f-present-school').value.trim()||!document.getElementById('f-present-major').value.trim()){showErr('apply-err','제시문 학교명과 학과명을 입력해 주세요.');return;}
-  }
   if(type==='대학 자체 질문'&&!document.getElementById('f-univ-q').value.trim()){showErr('apply-err','대학교 자체 질문을 입력해 주세요.');return;}
 
   const extra={};
-  if(type==='MMI'){extra.mmiSchool=document.getElementById('f-mmi-school').value.trim();extra.mmiSubject=document.getElementById('f-mmi-subject').value.trim();}
-  if(type==='제시문'){extra.presentSchool=document.getElementById('f-present-school').value.trim();extra.presentMajor=document.getElementById('f-present-major').value.trim();}
   if(type==='대학 자체 질문'){extra.univQ=document.getElementById('f-univ-q').value.trim();}
 
   dbRef(`applicants/${sid}`).once('value').then(snap=>{
@@ -873,8 +867,7 @@ function submitApply(){
       interviewDate,appCnt,extra,
       asgn:'',place:'',registeredAt:Date.now()
     }).then(()=>{
-      ['f-sid','f-name','f-school','f-major','f-interview-date',
-       'f-mmi-school','f-mmi-subject','f-present-school','f-present-major','f-univ-q']
+      ['f-sid','f-name','f-school','f-major','f-interview-date','f-univ-q']
         .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       document.getElementById('f-type').value='';
       document.getElementById('sid-hint').textContent='';
@@ -1231,37 +1224,41 @@ function renderStudentList(){
   if(!list.length){tb.innerHTML='<tr><td colspan="8" style="padding:16px;color:#999;font-size:13px;text-align:center;">지원자가 없습니다.</td></tr>';return;}
 
   tb.innerHTML=list.map(a=>{
-    // 배정 시간: 슬롯 키에서 사람이 읽는 형식으로 변환
+    // 배정 시간 레이블
     const asgnSlot=a.asgn?SLOTS[a.asgn]:null;
-    // 슬롯 정보가 없으면 빈 문자열(날 것 키 노출 방지)
     const asgnLabel=asgnSlot?slotHumanLabel(asgnSlot):'';
 
-    // 배정 선택 옵션 — 날짜/시간순 정렬, 사람이 읽는 레이블로 표시
+    // 가능 슬롯 키 — SLOTS에 없는 것도 포함해 표시
     const slotKeys=getApplicantSlotKeys(a)
-      .sort((x,y)=>{
-        const sx=SLOTS[x],sy=SLOTS[y];
-        return (sx?.date||'').localeCompare(sy?.date||'')||(sx?.time||'').localeCompare(sy?.time||'');
-      });
+      .sort((x,y)=>(SLOTS[x]?.date||x).localeCompare(SLOTS[y]?.date||y)||(SLOTS[x]?.time||'').localeCompare(SLOTS[y]?.time||''));
+
     const timeOpts=slotKeys.map(sk=>{
       const s=SLOTS[sk];
-      const lbl=s?slotHumanLabel(s):'(슬롯 정보 없음)';
+      // SLOTS에 없어도 slotKey에서 날짜 파싱 시도 (YYYYMMDD_ts_HHMM 형식)
+      let lbl;
+      if(s){
+        lbl=slotHumanLabel(s);
+      } else {
+        const m=sk.match(/^(\d{4})(\d{2})(\d{2})_ts_(\d{2})(\d{2})/);
+        lbl=m?`${+m[2]}월 ${+m[3]}일 ${m[4]}:${m[5]}`:sk;
+      }
       return`<option value="${sk}" ${a.asgn===sk?'selected':''}>${lbl}</option>`;
     }).join('');
 
     // 장소 옵션
     const placeOpts=getPlaces().map(pl=>`<option value="${pl.place}" ${a.place===pl.place?'selected':''}>${pl.place}</option>`).join('');
 
-    // 면접일자: M월 D일만
-    const iDate=a.interviewDate?`${parseInt(a.interviewDate.split('-')[1])}/${parseInt(a.interviewDate.split('-')[2])}`:'—';
-
     return`<tr>
       <td style="font-family:monospace;font-size:12px;color:#666;">${a.sid}</td>
-      <td style="text-align:left;">
+      <td>
         <div style="font-weight:700;font-size:13px;color:#1a1a18;">${a.name}</div>
         <span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}" style="font-size:10px;margin-top:2px;display:inline-block;">${a.type}</span>
       </td>
       <td style="font-weight:600;color:#534AB7;">${a.appCnt||1}회</td>
-      <td style="font-size:12px;color:#555;">${a.major||a.dept||'—'}</td>
+      <td style="font-size:11px;color:#555;line-height:1.5;">
+        ${a.school?`<div style="font-weight:600;color:#1a1a18;">${a.school}</div>`:''}
+        <div style="color:#666;">${a.major||a.dept||'—'}</div>
+      </td>
       <td>
         <select style="font-size:11px;width:150px;" onchange="setAsgn('${a.sid}',this.value)">
           <option value="">${a.asgn?'재배정':'배정 선택'}</option>${timeOpts}
@@ -1297,7 +1294,13 @@ function slotHumanLabel(slot){
   return`${+m}월 ${+d}일(${dow}) ${slot.time||slot.label}`;
 }
 
-function cancelAssign(sid){
+function cancelAssignRound(sid, asgnKey){
+  if(!confirm(`${AP[sid]?.name||sid}의 ${asgnKey==='asgn'?'1':asgnKey.replace('asgn','')}회차 배정을 취소하시겠습니까?`))return;
+  const updates={[`${DB}/applicants/${sid}/${asgnKey}`]:''};
+  if(asgnKey==='asgn') updates[`${DB}/applicants/${sid}/place`]='';
+  db.ref().update(updates);
+}
+function cancelAssign(sid){ // 전체 배정 취소 (초기화용)
   if(!confirm(`${AP[sid]?.name||sid}의 배정을 취소하시겠습니까?`))return;
   const updates={[`${DB}/applicants/${sid}/asgn`]:'', [`${DB}/applicants/${sid}/place`]:''};
   for(let i=2;i<=5;i++) updates[`${DB}/applicants/${sid}/asgn${i}`]=null;
@@ -1726,10 +1729,19 @@ function renderWcal(){
       if(!slot){
         h+=`<td style="background:#fafaf8;"><div style="padding:4px;font-size:9px;color:#ccc;text-align:center;">—</div></td>`;
       } else {
-        const chips=Object.values(AP).filter(a=>a.asgn===slotK).map(a=>`
+        // asgn, asgn2, asgn3... 모두 이 슬롯에 배정된 학생 수집
+        const chipsHtml=Object.values(AP).flatMap(a=>{
+          const rounds=[];
+          if(a.asgn===slotK) rounds.push({a,round:1,key:'asgn'});
+          for(let i=2;i<=5;i++) if(a[`asgn${i}`]===slotK) rounds.push({a,round:i,key:`asgn${i}`});
+          return rounds;
+        }).map(({a,round,key})=>`
           <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" style="display:flex;align-items:center;justify-content:space-between;gap:2px;">
-            <span onclick="showChipModal('${a.sid}','${slotK}')" style="cursor:pointer;flex:1;">${a.name}${a.place?`<br><span style="font-size:9px;opacity:.7;">${a.place}</span>`:''}</span>
-            <button onclick="cancelAssign('${a.sid}')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;" title="배정 취소">×</button>
+            <span onclick="showChipModal('${a.sid}','${slotK}')" style="cursor:pointer;flex:1;">
+              ${a.name}${(a.appCnt||1)>1?`<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;margin-left:2px;">${round}회</span>`:''}
+              ${a.place?`<br><span style="font-size:9px;opacity:.7;">${a.place}</span>`:''}
+            </span>
+            <button onclick="cancelAssignRound('${a.sid}','${key}')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;" title="배정 취소">×</button>
           </div>`).join('');
         h+=`<td>
           <div style="font-size:9px;color:#888;display:flex;justify-content:space-between;margin-bottom:3px;padding:0 2px;">
@@ -1737,7 +1749,7 @@ function renderWcal(){
             <span style="color:${pct>=100?'#D44040':pct>=70?'#EF9F27':'#1D9E75'};font-weight:700;">${pct}%</span>
           </div>
           <div class="gauge-wrap" style="margin-bottom:4px;"><div class="gauge-bar ${barCls}" style="width:${Math.min(pct,100)}%;"></div></div>
-          <div class="drop-zone" data-sk="${slotK}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${slotK}')" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)">${chips}</div>
+          <div class="drop-zone" data-sk="${slotK}" ondragover="onDragOver(event)" ondrop="onDrop(event,'${slotK}')" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)">${chipsHtml}</div>
         </td>`;
       }
     });
@@ -1752,22 +1764,60 @@ function weekNext(){weekOffset++;renderWcal();renderSidebar();}
 function renderSidebar(){
   const ft=document.getElementById('sidebar-filter').value;
   const unassigned=Object.values(AP).filter(a=>!a.asgn&&(!ft||a.type===ft));
-  document.getElementById('unassigned-count').textContent=`(${unassigned.length}명)`;
+
+  // 희망 횟수 합산 (미배정 슬롯 수)
+  const totalSlots=unassigned.reduce((s,a)=>s+(a.appCnt||1),0);
+  document.getElementById('unassigned-count').textContent=`(${unassigned.length}명 / ${totalSlots}슬롯)`;
+
   const el=document.getElementById('sidebar-list');
   if(!unassigned.length){el.innerHTML='<p style="font-size:12px;color:#888;padding:8px;">미배정 학생 없음</p>';return;}
-  el.innerHTML=unassigned.sort((a,b)=>a.sid.localeCompare(b.sid)).map(a=>{
+
+  // 희망 횟수만큼 카드 분리
+  const cards=[];
+  unassigned.sort((a,b)=>a.sid.localeCompare(b.sid)).forEach(a=>{
+    const wantCnt=a.appCnt||1;
     const slotKeys=getApplicantSlotKeys(a)
       .sort((x,y)=>(SLOTS[x]?.date||'').localeCompare(SLOTS[y]?.date||''));
-    const labels=slotKeys.slice(0,2).map(sk=>{ const s=SLOTS[sk]; return s?slotHumanLabel(s):''; }).filter(Boolean);
-    return`<div class="sc-card" draggable="true" data-sid="${a.sid}" ondragstart="onDragStart(event,'${a.sid}')">
-      <div class="sc-name">${a.name} <span class="badge ${ITYPE_COLOR[a.type]||'b-gry'}" style="font-size:10px;margin-left:4px;">${a.type}</span></div>
-      <div class="sc-sub">${a.sid} · 희망 ${a.appCnt||1}회</div>
-      <div class="sc-sub" style="margin-top:2px;">${labels.join(' / ')}${slotKeys.length>2?` 외 ${slotKeys.length-2}개`:''}</div>
-    </div>`;
-  }).join('');
+
+    for(let i=0;i<wantCnt;i++){
+      // 이미 배정된 회차 건너뜀
+      const asgnKey=i===0?'asgn':`asgn${i+1}`;
+      if(a[asgnKey])continue;
+
+      const labels=slotKeys.slice(0,2).map(sk=>{const s=SLOTS[sk];return s?slotHumanLabel(s):'';}).filter(Boolean);
+      cards.push({
+        sid:a.sid,
+        name:a.name,
+        type:a.type,
+        round:i+1,
+        total:wantCnt,
+        asgnKey,
+        labels
+      });
+    }
+  });
+
+  if(!cards.length){el.innerHTML='<p style="font-size:12px;color:#888;padding:8px;">미배정 학생 없음</p>';return;}
+
+  el.innerHTML=cards.map(c=>`
+    <div class="sc-card" draggable="true" data-sid="${c.sid}" data-round="${c.round}" data-asgn-key="${c.asgnKey}"
+         ondragstart="onDragStart(event,'${c.sid}','${c.asgnKey}')">
+      <div class="sc-name">
+        ${c.name}
+        ${c.total>1?`<span style="font-size:10px;background:#534AB7;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;">${c.round}회차</span>`:''}
+        <span class="badge ${ITYPE_COLOR[c.type]||'b-gry'}" style="font-size:10px;margin-left:4px;">${c.type}</span>
+      </div>
+      <div class="sc-sub" style="margin-top:3px;">${c.labels.join(' / ')}${c.labels.length<2?'':''}</div>
+    </div>`).join('');
 }
 
-function onDragStart(e,sid){dragStudentId=sid;e.currentTarget.classList.add('dragging');}
+let dragStudentId=null, dragAsgnKey='asgn';
+
+function onDragStart(e,sid,asgnKey='asgn'){
+  dragStudentId=sid;
+  dragAsgnKey=asgnKey||'asgn';
+  e.currentTarget.classList.add('dragging');
+}
 function onDragOver(e){e.preventDefault();}
 function onDragEnter(e){e.currentTarget.classList.add('over');}
 function onDragLeave(e){e.currentTarget.classList.remove('over');}
@@ -1784,10 +1834,12 @@ function onDrop(e,sk){
   const places=getPlaces();
   const placeIdx=used%(places.length||4);
   const place=places[placeIdx]?.place||'';
-  db.ref().update({
-    [`${DB}/applicants/${dragStudentId}/asgn`]:sk,
-    [`${DB}/applicants/${dragStudentId}/place`]:place
-  }).then(()=>{dragStudentId=null;});
+  const updates={
+    [`${DB}/applicants/${dragStudentId}/${dragAsgnKey}`]:sk
+  };
+  // 1회차면 장소도 함께 저장
+  if(dragAsgnKey==='asgn') updates[`${DB}/applicants/${dragStudentId}/place`]=place;
+  db.ref().update(updates).then(()=>{dragStudentId=null;dragAsgnKey='asgn';});
 }
 
 // ── 시간표 보기 ───────────────────────────────────────
@@ -1973,6 +2025,50 @@ function printSchedule(){
 }
 
 // ── 유틸 ──────────────────────────────────────────────
+// ── 엑셀 내보내기 ─────────────────────────────────────
+function exportExcel(){
+  const apList=Object.values(AP).filter(a=>a.asgn);
+  if(!apList.length){alert('배정된 지원자가 없습니다.');return;}
+
+  const rows=apList.sort((a,b)=>{
+    const sa=SLOTS[a.asgn],sb=SLOTS[b.asgn];
+    return (sa?.date||'').localeCompare(sb?.date||'')||(sa?.time||'').localeCompare(sb?.time||'');
+  }).flatMap(a=>{
+    const t1=TC[a.teacher1],t2=TC[a.teacher2];
+    const t1Name=t1?t1.name:'';
+    const t2Name=t2?t2.name:'';
+    const result=[];
+    for(let i=1;i<=5;i++){
+      const sk=i===1?a.asgn:a[`asgn${i}`];
+      if(!sk)break;
+      const s=SLOTS[sk];
+      let yr='',mo='',dy='',ts='';
+      if(s){const[y,m,d]=s.date.split('-');yr=+y;mo=+m;dy=+d;ts=s.time||'';}
+      result.push({
+        '년도':yr,'월':mo,'일':dy,'시간':ts,
+        '학번':a.sid,'이름':a.name,
+        '대학':a.school||'',
+        '학과명':a.major||a.dept||'',
+        '전형':a.type||'',
+        '담당교사1':t1Name,
+        '담당교사2':t2Name,
+        '장소':a.place||''
+      });
+    }
+    return result;
+  });
+
+  const ws=XLSX.utils.json_to_sheet(rows,{
+    header:['년도','월','일','시간','학번','이름','대학','학과명','전형','담당교사1','담당교사2','장소']
+  });
+  ws['!cols']=[{wch:6},{wch:4},{wch:4},{wch:12},{wch:8},{wch:8},{wch:14},{wch:14},{wch:10},{wch:8},{wch:8},{wch:12}];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'모의면접 배정');
+  const d=new Date();
+  XLSX.writeFile(wb,`모의면접_배정표_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`);
+}
+
 function flash(id){const b=document.getElementById(id);if(!b)return;b.style.display='block';setTimeout(()=>b.style.display='none',3500);}
 function showErr(id,msg){const b=document.getElementById(id);if(!b)return;b.textContent=msg;b.style.display='block';setTimeout(()=>b.style.display='none',4000);}
 
