@@ -649,18 +649,85 @@ function initFirebase(){
 function dbRef(path){ return db.ref(`${DB}/${path}`); }
 
 function loadData(){
-  dbRef('applicants').on('value',snap=>{
-    AP=snap.val()||{};
-    updateStats(); syncAdminFilters(); renderStudentList();
-    renderSidebar(); renderWcal(); renderSchView();
+  // 초기 로딩: 6개 데이터를 동시에 받아서 한 번에 렌더
+  const paths=['applicants','teachers','teacher_assigns','blocked_dates','slots','settings'];
+  let loaded=0;
+  const total=paths.length;
+
+  function onAllLoaded(){
+    // 초기 데이터 모두 도착하면 한 번에 렌더
+    maxCnt=SETTINGS.maxCnt||3;
+    const el1=document.getElementById('max-cnt-label');
+    const el2=document.getElementById('cur-max-cnt');
+    const el3=document.getElementById('max-cnt-input');
+    if(el1)el1.textContent=maxCnt;
+    if(el2)el2.textContent=maxCnt;
+    if(el3)el3.value=maxCnt;
+    updateStats();
+    syncAdminFilters();
+    renderStudentList();
+    renderCal();
+    renderBlockedDates();
+    renderTimeSlotList();
+    renderPlaceSlotList();
+    renderSlotList();
     renderAssignDashboard();
     document.getElementById('loading-box').style.display='none';
+  }
+
+  // 초기 1회 읽기 (once) 후 리스너 등록
+  paths.forEach(function(path){
+    dbRef(path).once('value', function(snap){
+      if(path==='applicants') AP=snap.val()||{};
+      else if(path==='teachers') TC=snap.val()||{};
+      else if(path==='teacher_assigns') TA=snap.val()||{};
+      else if(path==='blocked_dates') BD=snap.val()||{};
+      else if(path==='slots') SLOTS=snap.val()||{};
+      else if(path==='settings') SETTINGS=snap.val()||{};
+      loaded++;
+      if(loaded>=total) onAllLoaded();
+    });
   });
-  dbRef('teachers').on('value',snap=>{ TC=snap.val()||{}; updateStats();renderTeachers();renderSchView(); });
-  dbRef('teacher_assigns').on('value',snap=>{ TA=snap.val()||{}; renderTeacherAssigns();renderTaWcal();renderTeachers(); });
-  dbRef('blocked_dates').on('value',snap=>{ BD=snap.val()||{}; renderCal();renderBlockedDates(); });
-  dbRef('slots').on('value',snap=>{ SLOTS=snap.val()||{}; renderSlotList();renderCal(); });
-  dbRef('settings').on('value',snap=>{
+
+  // 이후 실시간 업데이트 리스너
+  dbRef('applicants').on('value',function(snap){
+    if(loaded<total)return; // 초기 로딩 중에는 무시
+    AP=snap.val()||{};
+    updateStats();
+    const subId=getActiveSubId();
+    if(subId==='sub-students'){ syncAdminFilters(); renderStudentList(); }
+    if(subId==='sub-assign'){ renderSidebar(); renderWcal(); renderAssignDashboard(); }
+    else if(subId==='sub-students') renderAssignDashboard();
+    if(subId==='sub-schedule') renderSchView();
+  });
+  dbRef('teachers').on('value',function(snap){
+    if(loaded<total)return;
+    TC=snap.val()||{};
+    updateStats();
+    const subId=getActiveSubId();
+    if(subId==='sub-teachers') renderTeachers();
+    if(subId==='sub-schedule') renderSchView();
+  });
+  dbRef('teacher_assigns').on('value',function(snap){
+    if(loaded<total)return;
+    TA=snap.val()||{};
+    const subId=getActiveSubId();
+    if(subId==='sub-teachers'){ renderTeacherAssigns(); renderTaWcal(); renderTeachers(); }
+  });
+  dbRef('blocked_dates').on('value',function(snap){
+    if(loaded<total)return;
+    BD=snap.val()||{};
+    renderCal(); renderBlockedDates();
+  });
+  dbRef('slots').on('value',function(snap){
+    if(loaded<total)return;
+    SLOTS=snap.val()||{};
+    renderSlotList(); renderCal();
+    const subId=getActiveSubId();
+    if(subId==='sub-assign') renderWcal();
+  });
+  dbRef('settings').on('value',function(snap){
+    if(loaded<total)return;
     SETTINGS=snap.val()||{};
     maxCnt=SETTINGS.maxCnt||3;
     const el1=document.getElementById('max-cnt-label');
@@ -669,11 +736,16 @@ function loadData(){
     if(el1)el1.textContent=maxCnt;
     if(el2)el2.textContent=maxCnt;
     if(el3)el3.value=maxCnt;
-    renderTimeSlotList();
-    renderPlaceSlotList();
-    renderWcal();
-    renderTaWcal();
+    renderTimeSlotList(); renderPlaceSlotList();
+    const subId=getActiveSubId();
+    if(subId==='sub-assign') renderWcal();
+    if(subId==='sub-teachers') renderTaWcal();
   });
+}
+
+function getActiveSubId(){
+  const el=document.querySelector('.sub-sec.active');
+  return el?el.id:'';
 }
 
 // ── 학번 파싱 ──────────────────────────────────────────
@@ -1205,7 +1277,13 @@ function renderStudentList(){
   }).sort((a,b)=>a.sid.localeCompare(b.sid));
 
   const tb=document.getElementById('student-tbody');
-  if(!list.length){tb.innerHTML='<tr><td colspan="8" style="padding:16px;color:#999;font-size:13px;text-align:center;">지원자가 없습니다.</td></tr>';return;}
+  if(!list.length){tb.innerHTML='<tr><td colspan="6" style="padding:16px;color:#999;font-size:13px;text-align:center;">지원자가 없습니다.</td></tr>';return;}
+
+  // 루프 밖에서 미리 계산 (성능 최적화)
+  const places=getPlaces();
+  const teachers=sortedTeachers();
+  const placeOptsBase=places.map(pl=>`<option value="${pl.place}">${pl.place}</option>`).join('');
+  const teacherOptsBase=teachers.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
 
   tb.innerHTML=list.map(a=>{
     // 배정 시간 레이블
@@ -1251,13 +1329,13 @@ function renderStudentList(){
           const t1Key=roundNum===1?'teacher1':`teacher1_${roundNum}`;
           const t2Key=roundNum===1?'teacher2':`teacher2_${roundNum}`;
           const curSk=a[asgnKey]||'';
-          const curSlot=curSk?SLOTS[curSk]:null;
           const curPlace=a[placeKey]||'';
           const curT1=a[t1Key]||'';
           const curT2=a[t2Key]||'';
-          const placeOptsR=getPlaces().map(pl=>`<option value="${pl.place}" ${curPlace===pl.place?'selected':''}>${pl.place}</option>`).join('');
-          const tOptsR=sortedTeachers().map(t=>`<option value="${t.id}" ${curT1===t.id?'selected':''}>${t.name}</option>`).join('');
-          const tOpts2R=sortedTeachers().map(t=>`<option value="${t.id}" ${curT2===t.id?'selected':''}>${t.name}</option>`).join('');
+          // 미리 계산된 옵션에 selected만 주입
+          const placeOptsR=places.map(pl=>`<option value="${pl.place}" ${curPlace===pl.place?'selected':''}>${pl.place}</option>`).join('');
+          const tOptsR=teachers.map(t=>`<option value="${t.id}" ${curT1===t.id?'selected':''}>${t.name}</option>`).join('');
+          const tOpts2R=teachers.map(t=>`<option value="${t.id}" ${curT2===t.id?'selected':''}>${t.name}</option>`).join('');
           return`<div style="display:flex;align-items:center;gap:5px;${roundNum>1?'border-top:1px solid #f0f0ec;padding-top:5px;margin-top:5px':''}">
             <span style="font-size:10px;font-weight:700;color:${roundNum===1?'#534AB7':'#1D9E75'};min-width:22px;flex-shrink:0;">${roundNum}회</span>
             <select style="font-size:11px;width:130px;flex-shrink:0;" onchange="setAsgnRound('${a.sid}','${asgnKey}',this.value)">
