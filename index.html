@@ -1709,11 +1709,10 @@ function confirmAutoAssign(){
       const roundNum=idx+1;
       const asgnKey=roundNum===1?'asgn':`asgn${roundNum}`;
       const placeKey=roundNum===1?'place':`place${roundNum}`;
-      // 이미 동일한 값이 저장돼 있으면 스킵
       const existingSk=roundNum===1?a?.asgn:a?.[`asgn${roundNum}`];
       if(existingSk===sk)return;
       updates[`${DB}/applicants/${r.sid}/${asgnKey}`]=sk;
-      if(roundNum===1) updates[`${DB}/applicants/${r.sid}/${placeKey}`]=place;
+      updates[`${DB}/applicants/${r.sid}/${placeKey}`]=place; // 모든 회차 장소 저장
       newCount++;
     });
     if(newCount>0)cnt++;
@@ -2089,13 +2088,13 @@ function printSchedule(){
   win.document.close();
 }
 
-// ── 유틸 ──────────────────────────────────────────────
-// ── 엑셀(CSV) 내보내기 ────────────────────────────────
+// ── 엑셀(.xlsx) 내보내기 — 순수 JS 구현 ──────────────
 function exportExcel(){
   const apList=Object.values(AP).filter(a=>a.asgn);
   if(!apList.length){alert('배정된 지원자가 없습니다.');return;}
 
-  const rows=apList.sort((a,b)=>{
+  const header=['년도','월','일','시간','학번','이름','대학','학과명','전형','담당교사1','담당교사2','장소'];
+  const dataRows=apList.sort((a,b)=>{
     const sa=SLOTS[a.asgn],sb=SLOTS[b.asgn];
     return (sa?.date||'').localeCompare(sb?.date||'')||(sa?.time||'').localeCompare(sb?.time||'');
   }).flatMap(a=>{
@@ -2105,28 +2104,105 @@ function exportExcel(){
       if(!sk)break;
       const s=SLOTS[sk];
       let yr='',mo='',dy='',ts='';
-      if(s){const[y,m,d]=s.date.split('-');yr=y;mo=m;dy=d;ts=s.time||'';}
+      if(s){const[y,m,d]=s.date.split('-');yr=+y;mo=+m;dy=+d;ts=s.time||'';}
       const placeKey=i===1?'place':`place${i}`;
       const t1Key=i===1?'teacher1':`teacher1_${i}`;
       const t2Key=i===1?'teacher2':`teacher2_${i}`;
-      const tc1=TC[a[t1Key]], tc2=TC[a[t2Key]];
+      const tc1=TC[a[t1Key]],tc2=TC[a[t2Key]];
       result.push([yr,mo,dy,ts,a.sid,a.name,a.school||'',a.major||a.dept||'',a.type||'',tc1?tc1.name:'',tc2?tc2.name:'',a[placeKey]||'']);
     }
     return result;
   });
 
-  const header=['년도','월','일','시간','학번','이름','대학','학과명','전형','담당교사1','담당교사2','장소'];
-  const csvContent='\uFEFF'+[header,...rows]
-    .map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))
-    .join('\n');
+  const allRows=[header,...dataRows];
+  const colWidths=[6,4,4,12,8,8,14,14,12,8,8,12];
 
-  const blob=new Blob([csvContent],{type:'text/csv;charset=utf-8;'});
+  // XML 문자 이스케이프
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  // 공유 문자열 테이블 구성
+  const strs=[]; const strIdx={};
+  const si=v=>{const s=String(v);if(strIdx[s]===undefined){strIdx[s]=strs.length;strs.push(s);}return strIdx[s];};
+
+  // 셀 생성
+  const colLetter=c=>{let r='';c++;while(c>0){r=String.fromCharCode(65+(c-1)%26)+r;c=Math.floor((c-1)/26);}return r;};
+  let sheetXml='<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+  allRows.forEach((row,ri)=>{
+    sheetXml+=`<row r="${ri+1}">`;
+    row.forEach((val,ci)=>{
+      const cell=colLetter(ci)+(ri+1);
+      if(typeof val==='number'&&val!==''){
+        sheetXml+=`<c r="${cell}" t="n"><v>${val}</v></c>`;
+      } else {
+        const idx=si(val);
+        sheetXml+=`<c r="${cell}" t="s"><v>${idx}</v></c>`;
+      }
+    });
+    sheetXml+='</row>';
+  });
+  sheetXml+='</sheetData>';
+  // 열 너비
+  sheetXml+='<cols>'+colWidths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')+'</cols>';
+  sheetXml+='</worksheet>';
+
+  const sst='<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="'+strs.length+'" uniqueCount="'+strs.length+'">'+strs.map(s=>`<si><t>${esc(s)}</t></si>`).join('')+'</sst>';
+  const wb='<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="모의면접 배정" sheetId="1" r:id="rId1"/></sheets></workbook>';
+  const wbRels='<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>';
+  const contentTypes='<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>';
+  const rels='<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+
+  // ZIP 생성 (JSZip 없이 수동 구현)
+  const enc=new TextEncoder();
+  const files={
+    '[Content_Types].xml':enc.encode(contentTypes),
+    '_rels/.rels':enc.encode(rels),
+    'xl/workbook.xml':enc.encode(wb),
+    'xl/_rels/workbook.xml.rels':enc.encode(wbRels),
+    'xl/worksheets/sheet1.xml':enc.encode(sheetXml),
+    'xl/sharedStrings.xml':enc.encode(sst)
+  };
+
+  // 간단한 ZIP 빌더
+  function makeZip(files){
+    const u32=(n)=>[n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF];
+    const u16=(n)=>[n&0xFF,(n>>8)&0xFF];
+    function crc32(buf){
+      let c=0xFFFFFFFF;
+      const t=new Uint32Array(256);
+      for(let i=0;i<256;i++){let v=i;for(let j=0;j<8;j++)v=v&1?0xEDB88320^(v>>>1):v>>>1;t[i]=v;}
+      for(const b of buf)c=t[(c^b)&0xFF]^(c>>>8);
+      return(c^0xFFFFFFFF)>>>0;
+    }
+    const parts=[];let offset=0;const central=[];
+    for(const[name,data] of Object.entries(files)){
+      const nameBytes=new TextEncoder().encode(name);
+      const crc=crc32(data);
+      const local=[0x50,0x4B,0x03,0x04,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(data.length),...u32(data.length),...u16(nameBytes.length),0,0,...nameBytes,...data];
+      const localArr=new Uint8Array(local);
+      central.push({name:nameBytes,crc,size:data.length,offset});
+      parts.push(localArr);
+      offset+=localArr.length;
+    }
+    const centralParts=central.map(({name,crc,size,offset})=>new Uint8Array([0x50,0x4B,0x01,0x02,20,0,20,0,0,0,0,0,0,0,0,0,...u32(crc),...u32(size),...u32(size),...u16(name.length),0,0,0,0,0,0,0,0,0,0,0,...u32(offset),...name]));
+    const centralSize=centralParts.reduce((s,p)=>s+p.length,0);
+    const eocd=new Uint8Array([0x50,0x4B,0x05,0x06,0,0,0,0,...u16(central.length),...u16(central.length),...u32(centralSize),...u32(offset),0,0]);
+    const total=parts.reduce((s,p)=>s+p.length,0)+centralSize+eocd.length;
+    const out=new Uint8Array(total);
+    let pos=0;
+    for(const p of parts){out.set(p,pos);pos+=p.length;}
+    for(const p of centralParts){out.set(p,pos);pos+=p.length;}
+    out.set(eocd,pos);
+    return out;
+  }
+
+  const zipData=makeZip(files);
+  const blob=new Blob([zipData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   const d=new Date();
   a.href=url;
-  a.download=`모의면접_배정표_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.csv`;
-  a.click();
+  a.download=`모의면접_배정표_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.xlsx`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
