@@ -139,7 +139,7 @@ table.data-tbl tr:hover td{background:#fafaf8;}
 .slot-chip.avail{background:#EDF6E4;color:#27500A;border-color:#97C459;}
 .notice-box{background:#FFFBEF;border:1px solid #F0C060;border-radius:10px;padding:12px 16px;font-size:13px;color:#7A5500;margin-bottom:16px;line-height:1.7;}
 .app-cnt-box{display:flex;gap:10px;align-items:center;margin-bottom:4px;}
-.cnt-btn{width:38px;height:38px;border-radius:9px;border:1.5px solid #e0e0da;background:#fff;font-size:18px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cnt-btn{width:42px;height:42px;border-radius:9px;border:1.5px solid #e0e0da;background:#fff;font-size:20px;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .cnt-btn:hover{background:#f0f0ec;border-color:#ccc;}
 .cnt-display{font-size:22px;font-weight:800;min-width:36px;text-align:center;color:#534AB7;}
 .day-check-wrap{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
@@ -168,9 +168,98 @@ table.data-tbl tr:hover td{background:#fafaf8;}
   th,td{border:1px solid #ccc!important;}
 }
 @media(max-width:640px){
+  /* 레이아웃 */
+  .app{padding:8px;}
   .form-grid{grid-template-columns:1fr;}
   .stat-row{grid-template-columns:repeat(2,1fr);}
   .admin-layout{grid-template-columns:1fr;}
+  .dash-grid{grid-template-columns:repeat(3,1fr);}
+
+  /* 탑바 */
+  .topbar{padding:10px 14px;border-radius:10px;}
+  .topbar-title{font-size:14px;}
+  .ttab{padding:6px 10px;font-size:12px;}
+  .mode-badge{font-size:10px;padding:3px 8px;}
+
+  /* 카드 */
+  .card{padding:14px 16px;border-radius:10px;}
+
+  /* 탭 */
+  .section-sub{gap:0;}
+  .stab{font-size:11px;padding:8px 4px;}
+
+  /* 폼 */
+  input,select,textarea{font-size:16px;} /* iOS 자동 줌 방지 */
+  .fg label{font-size:12px;}
+
+  /* 달력 */
+  .cday{font-size:11px;min-height:32px;padding:3px 1px;}
+  .cal-head span{font-size:13px;}
+
+  /* 시간 선택 버튼 */
+  .pbtn{padding:8px 12px;font-size:12px;}
+
+  /* 배정 시간 테이블 — 가로 스크롤 */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table.data-tbl{min-width:600px;}
+  table.data-tbl th,table.data-tbl td{padding:6px 8px;}
+
+  /* 사이드바 숨김 (모바일에서 캘린더만 표시) */
+  .sidebar-box{display:none;}
+
+  /* 위클리 캘린더 가로 스크롤 */
+  .wcal-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .wcal-wrap table{min-width:480px;}
+
+  /* 모달 */
+  .modal-box{width:95vw;padding:18px 16px;border-radius:12px;}
+  .modal-box h3{font-size:15px;}
+  .dr{font-size:12px;}
+
+  /* 전략 카드 — 세로 배치 */
+  #strategy-cards{grid-template-columns:1fr!important;}
+  .strategy-card{padding:10px 12px;}
+
+  /* 통계 카드 */
+  .stat-c{padding:12px 8px;}
+  .stat-n{font-size:20px;}
+
+  /* 필터 행 */
+  .frow{gap:6px;}
+  .frow select{font-size:13px;padding:5px 8px;}
+
+  /* 버튼 */
+  .btn{padding:8px 14px;font-size:12px;}
+  .btn-p{padding:9px 16px;}
+
+  /* 지원자 관리 탭 배정 셀 */
+  td[style*="min-width:420px"]{min-width:300px!important;}
+
+  /* 체크박스 요일 */
+  .day-check-wrap{gap:8px;}
+  .day-cb{font-size:12px;}
+
+  /* 시간표 보기 */
+  #sch-content .wcal-wrap{overflow-x:auto;}
+
+  /* 실시간 배너 */
+  #sch-realtime-notice{font-size:11px;padding:8px 12px;}
+  #sch-last-updated{font-size:10px;}
+
+  /* 통계 */
+  .dash-card .dn{font-size:18px;}
+  .dash-card .dl{font-size:10px;}
+
+  /* 엑셀 버튼 */
+  .frow .btn-s{font-size:11px;padding:6px 10px;}
+}
+
+@media(max-width:400px){
+  .topbar-tabs{gap:3px;}
+  .ttab{padding:5px 8px;font-size:11px;}
+  .stab{font-size:10px;padding:7px 3px;}
+  .cday{font-size:10px;min-height:28px;}
+  .stat-row{grid-template-columns:repeat(2,1fr);gap:6px;}
 }
 </style>
 </head>
@@ -203,9 +292,9 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <input type="text" id="f-sid" placeholder="학번 4~5자리" maxlength="5" inputmode="numeric" oninput="onSidInput(this.value)">
         <div class="sid-hint" id="sid-hint"></div>
       </div>
-      <div class="fg"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동"></div>
-      <div class="fg"><label>지원 학교명 *</label><input type="text" id="f-school" placeholder="예: 서울대학교"></div>
-      <div class="fg"><label>지원 학과 *</label><input type="text" id="f-major" placeholder="예: 의학과"></div>
+      <div class="fg\"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동" autocomplete="name"></div>
+      <div class="fg"><label>지원 학교명 *</label><input type="text" id="f-school" placeholder="예: 서울대학교" autocomplete="off"></div>
+      <div class="fg"><label>지원 학과 *</label><input type="text" id="f-major" placeholder="예: 의학과" autocomplete="off"></div>
       <div class="fg">
         <label>면접 유형 *</label>
         <select id="f-type" onchange="onTypeChange()">
@@ -595,10 +684,17 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <option>제시문</option><option>MMI</option><option>기타</option>
       </select>
     </div>
-    <button class="btn" onclick="printSchedule()" style="font-size:13px;display:flex;align-items:center;gap:5px;">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="1" width="10" height="7" rx="1"/><rect x="1" y="6" width="14" height="7" rx="1"/><rect x="4" y="10" width="8" height="4" rx="1" fill="currentColor" stroke="none"/><circle cx="12" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
-      인쇄
-    </button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="sch-last-updated" style="font-size:11px;color:#999;"></span>
+      <button class="btn" onclick="printSchedule()" style="font-size:13px;display:flex;align-items:center;gap:5px;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="1" width="10" height="7" rx="1"/><rect x="1" y="6" width="14" height="7" rx="1"/><rect x="4" y="10" width="8" height="4" rx="1" fill="currentColor" stroke="none"/><circle cx="12" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+        인쇄
+      </button>
+    </div>
+  </div>
+  <!-- schedule 모드일 때만 보이는 안내 -->
+  <div id="sch-realtime-notice" style="display:none;background:#EDF6E4;border:1px solid #97C459;border-radius:10px;padding:10px 16px;font-size:12px;color:#27500A;margin-bottom:12px;">
+    🔴 <strong>실시간 연동 중</strong> — 관리자가 배정을 변경하면 이 화면에 자동으로 반영됩니다.
   </div>
   <div class="week-nav">
     <button class="btn" onclick="schWeekPrev()" style="padding:5px 12px;">&#8249;</button>
@@ -2010,6 +2106,18 @@ function renderSchView(){
   const dates=getWeekDates(schWeekOffset);
   const s=dates[0],e=dates[4];
   document.getElementById('sch-week-label').textContent=`${s.getMonth()+1}/${s.getDate()} - ${e.getMonth()+1}/${e.getDate()}`;
+
+  // schedule 모드 — 안내 배너 표시 및 갱신 시각 업데이트
+  const notice=document.getElementById('sch-realtime-notice');
+  const lastUpdated=document.getElementById('sch-last-updated');
+  if(notice) notice.style.display=curMode==='schedule'?'block':'none';
+  if(lastUpdated){
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const ss=String(now.getSeconds()).padStart(2,'0');
+    lastUpdated.textContent='마지막 갱신: '+hh+':'+mm+':'+ss;
+  }
   const filtered=Object.values(AP).filter(a=>a.asgn&&(!ft||a.type===ft));
 
   if(view==='cls'){
@@ -2261,15 +2369,24 @@ function switchSub(id,btn){
 
 function initMode(){
   const params=new URLSearchParams(window.location.search);
-  curMode=params.get('mode')==='admin'?'admin':'student';
+  const modeParam=params.get('mode');
+  curMode=modeParam==='admin'?'admin':modeParam==='schedule'?'schedule':'student';
   const tb=document.getElementById('topbar-tabs');
   const badge=document.getElementById('mode-badge');
+
   if(curMode==='admin'){
     document.getElementById('topbar-title').textContent='모의면접 관리자';
     badge.textContent='관리자 모드';badge.className='mode-badge mode-admin';
     tb.innerHTML=`<button class="ttab active" id="tab-admin" onclick="goPage('admin',this)">관리자 대시보드</button>
       <button class="ttab" id="tab-schedule" onclick="goPage('schedule',this)">시간표 보기</button>`;
     goPage('admin',tb.querySelector('#tab-admin'));
+
+  }else if(curMode==='schedule'){
+    document.getElementById('topbar-title').textContent='모의면접 시간표';
+    badge.textContent='시간표';badge.className='mode-badge mode-student';
+    tb.innerHTML=`<button class="ttab active" id="tab-schedule" onclick="goPage('schedule',this)">시간표</button>`;
+    goPage('schedule',tb.querySelector('#tab-schedule'));
+
   }else{
     document.getElementById('topbar-title').textContent='모의면접 신청';
     badge.textContent='학생 모드';badge.className='mode-badge mode-student';
