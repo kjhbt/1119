@@ -1055,6 +1055,14 @@ function submitTeacher(){
     flash('t-ok');
   });
 }
+function toggleBlockedDay(tid, dayNum, checked){
+  const t=TC[tid];
+  if(!t)return;
+  const days=(t.blockedDays||[]).filter(d=>d!==dayNum);
+  if(checked) days.push(dayNum);
+  days.sort();
+  dbRef(`teachers/${tid}/blockedDays`).set(days).then(()=>renderTaWcal());
+}
 function delTeacher(id){ if(confirm('삭제하시겠습니까?')) dbRef(`teachers/${id}`).remove(); }
 function clearAllTeachers(){ if(confirm('모두 삭제하시겠습니까?')) dbRef('teachers').remove().then(()=>alert('초기화 완료')); }
 
@@ -1080,24 +1088,30 @@ function renderTeachers(){
   const el=document.getElementById('t-list');
   const list=sortedTeachers();
   if(!list.length){el.innerHTML='<p style="padding:12px 0;font-size:13px;color:#888;">등록된 선생님이 없습니다.</p>';return;}
-  const COL='28px 1fr 72px 80px 60px 52px';
-  el.innerHTML=`<div style="display:grid;grid-template-columns:${COL};gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid #e5e5e0;font-size:11px;color:#888;font-weight:600;">
-    <span>#</span><span>이름/과목</span><span>담당 학급</span><span>불가 요일</span><span style="text-align:center;">배정</span><span></span>
-  </div>`+
-  list.map((t,i)=>{
+  const dayNames=['월','화','수','목','금'];
+  el.innerHTML=list.map((t,i)=>{
     const count=getTeacherAssignCount(t.id);
     const isNum=/^\d+$/.test(t.cls||'');
     const roleLabel=t.role||(isNum?(t.cls+'반 담임'):(t.cls==='부장'?'부장 교사':'없음'));
     const isPrimary=t.order===0||t.cls==='부장';
     const roleTag=`<span style="${isPrimary?'background:#EEEDFE;color:#3C3489;font-weight:600;':'background:#F1EFE8;color:#444441;'}padding:2px 7px;border-radius:5px;font-size:11px;">${roleLabel}</span>`;
-    const dayNames=['월','화','수','목','금'];
-    const bdStr=(t.blockedDays||[]).map(d=>dayNames[d-1]).join(',') || '-';
-    return`<div style="display:grid;grid-template-columns:${COL};gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
+    // 불가 요일 체크박스 (inline 수정 가능)
+    const dayCheckboxes=dayNames.map((name,di)=>{
+      const dayNum=di+1;
+      const checked=(t.blockedDays||[]).includes(dayNum)?'checked':'';
+      return`<label style="display:inline-flex;align-items:center;gap:2px;font-size:12px;cursor:pointer;margin-right:6px;">
+        <input type="checkbox" ${checked} onchange="toggleBlockedDay('${t.id}',${dayNum},this.checked)" style="width:auto;cursor:pointer;">
+        ${name}
+      </label>`;
+    }).join('');
+    return`<div style="display:grid;grid-template-columns:24px 1fr 80px auto 52px 52px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:13px;">
       <span style="font-size:12px;color:#aaa;font-weight:600;">${i+1}</span>
-      <span><span style="font-weight:600;">${t.name}</span><span style="color:#888;font-size:12px;margin-left:6px;">${t.subj||''}</span></span>
+      <div>
+        <div><span style="font-weight:600;">${t.name}</span><span style="color:#888;font-size:12px;margin-left:6px;">${t.subj||''}</span></div>
+        <div style="margin-top:5px;">${dayCheckboxes}</div>
+      </div>
       <span>${roleTag}</span>
-      <span style="font-size:11px;color:#A32D2D;">${bdStr}</span>
-      <span style="text-align:center;font-size:13px;font-weight:600;color:${count>0?'#534AB7':'#bbb'};">${count}회</span>
+      <span style="font-size:13px;font-weight:600;color:${count>0?'#534AB7':'#bbb'};text-align:center;">${count}회</span>
       <button class="btn btn-d" style="padding:3px 8px;font-size:11px;" onclick="delTeacher('${t.id}')">삭제</button>
     </div>`;
   }).join('');
@@ -1147,11 +1161,17 @@ function renderTaWcal(){
           const taKey=`ta_${dk}_${t.key}_${i}`;
           const ex=TA[taKey]||{};
           const plStuds=byPlace[pl.place]||[];
-          const plStudHtml=plStuds.map(a=>`<div style="font-size:9px;background:#E1F5EE;color:#085041;border-radius:3px;padding:1px 4px;margin:1px 0;">${a.name}</div>`).join('');
+          const plStudHtml=plStuds.map(a=>`
+            <div style="background:#E1F5EE;color:#085041;border-radius:4px;padding:2px 5px;margin:2px 0;font-size:9px;line-height:1.4;">
+              <div style="font-weight:700;">${a.name}</div>
+              ${a.major||a.dept?`<div style="opacity:.8;">${a.major||a.dept}</div>`:''}
+            </div>`).join('');
 
-          // 불가 요일 필터링
-          const availTeachers=tList.filter(t2=>!(t2.blockedDays||[]).includes(dow));
-          const tOpts='<option value="">-</option>'+availTeachers.map(t2=>`<option value="${t2.id}">${t2.name}</option>`).join('');
+          // 불가 요일 선생님은 회색+취소선으로 구분, 강제 배정은 가능
+          const tOpts='<option value="">-</option>'+tList.map(t2=>{
+            const blocked=(t2.blockedDays||[]).includes(dow);
+            return`<option value="${t2.id}" ${blocked?'style="color:#bbb;"':''} >${blocked?'⚠ ':''} ${t2.name}${blocked?' (불가)':''}</option>`;
+          }).join('');
 
           cellHtml+=`<div style="border:0.5px solid #e8e8e3;border-radius:6px;padding:4px 5px;margin-bottom:3px;background:#fafaf8;">
             <div style="font-size:9px;font-weight:700;color:#666;margin-bottom:2px;">${pl.place}</div>
