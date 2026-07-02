@@ -674,7 +674,7 @@ table.data-tbl tr:hover td{background:#fafaf8;}
 <!-- 시간표 보기 -->
 <div class="page" id="page-schedule">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-    <div class="frow" style="margin-bottom:0;">
+    <div class="frow" style="margin-bottom:0;flex-wrap:wrap;gap:6px;">
       <label>보기</label>
       <select id="sch-view" onchange="renderSchView()">
         <option value="all">전체</option><option value="cls">학급별</option><option value="tch">교사별</option>
@@ -683,6 +683,10 @@ table.data-tbl tr:hover td{background:#fafaf8;}
         <option value="">전체 유형</option><option>생기부</option><option>대학 자체 질문</option>
         <option>제시문</option><option>MMI</option><option>기타</option>
       </select>
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#555;white-space:nowrap;">
+        <input type="checkbox" id="sch-hide-teacher" onchange="renderSchView()" style="width:auto;cursor:pointer;">
+        선생님 이름 숨기기
+      </label>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="sch-last-updated" style="font-size:11px;color:#999;"></span>
@@ -2103,11 +2107,12 @@ function onDrop(e,sk){
 function renderSchView(){
   const view=document.getElementById('sch-view').value;
   const ft=document.getElementById('sch-filter').value;
+  const hideTeacherEl=document.getElementById('sch-hide-teacher');
+  const hideTeacher=hideTeacherEl?hideTeacherEl.checked:false;
   const dates=getWeekDates(schWeekOffset);
   const s=dates[0],e=dates[4];
   document.getElementById('sch-week-label').textContent=`${s.getMonth()+1}/${s.getDate()} - ${e.getMonth()+1}/${e.getDate()}`;
 
-  // schedule 모드 — 안내 배너 표시 및 갱신 시각 업데이트
   const notice=document.getElementById('sch-realtime-notice');
   const lastUpdated=document.getElementById('sch-last-updated');
   if(notice) notice.style.display=curMode==='schedule'?'block':'none';
@@ -2128,35 +2133,30 @@ function renderSchView(){
       const group=filtered.filter(a=>(parseSid(a.sid)&&parseSid(a.sid).key)===k);
       if(!group.length)return;
       html+=`<div class="grp-title cls">${g}학년 ${c}반</div>`;
-      html+=buildWeekTable(dates,group);
+      html+=buildWeekTable(dates,group,hideTeacher);
     });
     document.getElementById('sch-content').innerHTML=html||'<p style="color:#888;font-size:13px;">배정된 학생이 없습니다.</p>';
 
   } else if(view==='tch'){
-    // 교사별 보기: teacher_assigns 기반으로 해당 교사가 배치된 슬롯의 학생 표시
     let html='';
     Object.values(TC).forEach(t=>{
-      // 이 선생님이 배치된 슬롯 키들
       const assignedSlotKeys=Object.values(TA)
         .filter(ta=>ta.t1===t.id||ta.t2===t.id)
-        .map(ta=>{ // ta의 slotKey 재구성
-          const dk=ta.date.replace(/-/g,'');
-          return`${dk}_${ta.timeKey||''}`;
-        });
+        .map(ta=>{const dk=ta.date.replace(/-/g,'');return`${dk}_${ta.timeKey||''}`;});
       const group=filtered.filter(a=>assignedSlotKeys.includes(a.asgn));
       if(!group.length)return;
       const roleLabel=t.role||((/^\d+$/.test(t.cls||''))?(t.cls+'반 담임'):(t.cls==='부장'?'부장 교사':'없음'));
       html+=`<div class="grp-title tch">${t.name} 선생님 <span style="font-weight:400;font-size:12px;color:#888;">(${roleLabel})</span></div>`;
-      html+=buildWeekTable(dates,group);
+      html+=buildWeekTable(dates,group,hideTeacher);
     });
     document.getElementById('sch-content').innerHTML=html||'<p style="color:#888;font-size:13px;">배치된 교사가 없거나 배정된 학생이 없습니다.</p>';
 
   } else {
     document.getElementById('sch-content').innerHTML=
-      filtered.length?buildWeekTable(dates,filtered):'<p style="color:#888;font-size:13px;">배정된 학생이 없습니다.</p>';
+      filtered.length?buildWeekTable(dates,filtered,hideTeacher):'<p style="color:#888;font-size:13px;">배정된 학생이 없습니다.</p>';
   }
 }
-function buildWeekTable(dates, students){
+function buildWeekTable(dates, students, hideTeacher){
   const allTimes=Object.values(SETTINGS.times||{}).sort((a,b)=>a.time.localeCompare(b.time));
   let h='<div class="wcal-wrap" style="margin-bottom:10px;"><table><thead><tr><th style="width:72px;"></th>';
   dates.forEach(d=>h+=`<th>${d.getMonth()+1}/${d.getDate()}<br><span style="font-weight:400;font-size:10px;">${WDAYS[d.getDay()]}</span></th>`);
@@ -2169,10 +2169,24 @@ function buildWeekTable(dates, students){
       dates.forEach(d=>{
         const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
         const slotK=`${dk.replace(/-/g,'')}_${t.key}`;
-        const chips=students.filter(a=>a.asgn===slotK).map(a=>`
-          <div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
-            ${a.name}${a.place?`<br><span style="font-size:9px;opacity:.7;">${a.place}</span>`:''}
-          </div>`).join('');
+        const chips=students.filter(a=>a.asgn===slotK).map(a=>{
+          // 배치된 교사 정보 (TA에서 가져옴)
+          let teacherHtml='';
+          if(!hideTeacher){
+            // 이 슬롯에 배치된 교사 찾기
+            const taEntries=Object.values(TA).filter(ta=>ta.date===dk&&ta.timeKey===t.key&&ta.place===a.place);
+            if(taEntries.length){
+              const ta=taEntries[0];
+              const t1=TC[ta.t1],t2=TC[ta.t2];
+              const names=[t1&&t1.name,t2&&t2.name].filter(Boolean).join(' · ');
+              if(names) teacherHtml=`<span style="font-size:9px;opacity:.65;">${names}</span>`;
+            }
+          }
+          return`<div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
+            <div>${a.name}${a.place?`<span style="font-size:9px;opacity:.7;margin-left:4px;">${a.place}</span>`:''}</div>
+            ${teacherHtml}
+          </div>`;
+        }).join('');
         h+=`<td>${chips||'<div style="min-height:38px;"></div>'}</td>`;
       });
       h+='</tr>';
@@ -2273,6 +2287,8 @@ function printSchedule(){
   const view=document.getElementById('sch-view').value;
   const label=document.getElementById('sch-week-label').textContent;
   const viewName=view==='cls'?'학급별':view==='tch'?'교사별':'전체';
+  const hideTeacherEl=document.getElementById('sch-hide-teacher');
+  const hideTeacher=hideTeacherEl?hideTeacherEl.checked:false;
   const content=document.getElementById('sch-content').innerHTML;
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>모의면접 시간표</title>
@@ -2289,7 +2305,8 @@ function printSchedule(){
   .grp-title{font-size:13px;font-weight:600;margin:14px 0 6px;padding:5px 10px;background:#f5f5f0;border-radius:4px;}
   .grp-title.cls{border-left:3px solid #534AB7;}.grp-title.tch{border-left:3px solid #1D9E75;}
   @media print{button{display:none!important;}}</style></head><body>
-  <h1>모의면접 시간표</h1><div class="sub">${viewName} · ${label}</div>
+  <h1>모의면접 시간표</h1>
+  <div class="sub">${viewName} · ${label}${hideTeacher?' · 담당교사 비공개':''}</div>
   ${content}<\u0073cript>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
 }
