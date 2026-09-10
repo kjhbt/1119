@@ -879,7 +879,14 @@ function getApplicantSlotKeys(a){
   return Object.keys(a.times||{}).reduce(function(acc,dk){return acc.concat(a.times[dk]||[]);}, []);
 }
 function getSlotUsedByKey(tk){
-  return Object.values(AP).filter(a=>a.asgn===tk).length;
+  var cnt=0;
+  Object.values(AP).forEach(function(a){
+    for(var i=1;i<=5;i++){
+      var sk=(i===1)?a.asgn:a['asgn'+i];
+      if(sk===tk)cnt++;
+    }
+  });
+  return cnt;
 }
 function getPlaces(){
   return Object.values(SETTINGS.places||{}).sort((a,b)=>a.order-b.order);
@@ -972,8 +979,22 @@ function removeTime(k,slotK){
 function renderTimeTags(){
   const keys=Object.keys(selTimes).sort();
   const el=document.getElementById('time-tags');
-  if(!keys.length){el.innerHTML='<span style="font-size:12px;color:#888;">선택된 시간 없음</span>';return;}
-  el.innerHTML=[].concat.apply([],keys.map(k=>(selTimes[k]||[]).map(slotK=>{
+  let total=0;
+  keys.forEach(function(k){ total+=(selTimes[k]||[]).length; });
+
+  // 선택 현황 안내 배지
+  const enough=total>=appCnt;
+  const statusHtml=`<div style="width:100%;font-size:12px;margin-bottom:6px;padding:6px 12px;border-radius:8px;
+    background:${enough?'#EDF6E4':'#FFF8E1'};color:${enough?'#27500A':'#7A5500'};border:1px solid ${enough?'#97C459':'#F0C060'};">
+    ${enough?'✅':'⚠️'} 선택한 시간 <strong>${total}개</strong> / 희망 횟수 <strong>${appCnt}회</strong>
+    ${enough?'':` — <strong>${appCnt-total}개 이상 더 선택해 주세요.</strong>`}
+  </div>`;
+
+  if(!keys.length){
+    el.innerHTML=statusHtml+'<span style="font-size:12px;color:#888;">선택된 시간 없음</span>';
+    return;
+  }
+  el.innerHTML=statusHtml+[].concat.apply([],keys.map(k=>(selTimes[k]||[]).map(slotK=>{
     const slot=SLOTS[slotK];
     const lbl=slot?`${dateLabel(k)} ${slot.label||slot.time}`:slotK;
     return`<span class="ttag">${lbl}<button onclick="removeTime('${k}','${slotK}')">×</button></span>`;
@@ -984,6 +1005,7 @@ function renderTimeTags(){
 function changeCnt(d){
   appCnt=Math.max(1,Math.min(maxCnt,appCnt+d));
   document.getElementById('cnt-display').textContent=appCnt;
+  renderTimeTags();
 }
 
 // ── 면접 유형 변경 ────────────────────────────────────
@@ -1007,6 +1029,13 @@ function submitApply(){
   if(!/^\d{4,5}$/.test(sid)){showErr('apply-err','학번은 4~5자리 숫자여야 합니다.');return;}
   if(!parseSid(sid)){showErr('apply-err','올바른 학번 형식이 아닙니다.');return;}
   if(!Object.keys(timesObj).length){showErr('apply-err','가능한 날짜와 시간을 선택해 주세요.');return;}
+  // 희망 횟수 이상으로 가능 시간을 선택했는지 검증
+  var totalSel=0;
+  Object.keys(timesObj).forEach(function(k){ totalSel+=timesObj[k].length; });
+  if(totalSel<appCnt){
+    showErr('apply-err','희망 횟수('+appCnt+'회)보다 적게 선택하셨습니다. 가능한 시간을 '+appCnt+'개 이상 선택해 주세요. (현재 '+totalSel+'개)');
+    return;
+  }
   if(type==='대학 자체 질문'&&!document.getElementById('f-univ-q').value.trim()){showErr('apply-err','대학교 자체 질문을 입력해 주세요.');return;}
 
   const extra={};
@@ -1511,6 +1540,55 @@ function cancelAssign(sid){ // 전체 배정 취소 (초기화용)
 }
 
 function setAsgnRound(sid, asgnKey, v){
+  const a=AP[sid];
+  // ── 배정 취소가 아닌 경우에만 검증 ──
+  if(v && a){
+    const slot=SLOTS[v];
+    const warnings=[];
+
+    // 1) 정원 초과 검증 (본인이 이미 이 슬롯에 배정된 회차는 제외)
+    if(slot){
+      let used=0;
+      Object.values(AP).forEach(function(x){
+        for(let i=1;i<=5;i++){
+          const k=(i===1)?'asgn':('asgn'+i);
+          // 본인의 현재 수정 중인 회차는 카운트에서 제외
+          if(x.sid===sid && k===asgnKey) continue;
+          if(x[k]===v) used++;
+        }
+      });
+      if(used>=slot.max){
+        warnings.push('· 정원 초과 ('+used+'/'+slot.max+'명)');
+      }
+    }
+
+    // 2) 같은 날 중복 배정 검증
+    if(slot && slot.date){
+      const wantCnt=Math.max(1,parseInt(a.appCnt)||1);
+      for(let i=1;i<=wantCnt;i++){
+        const k=(i===1)?'asgn':('asgn'+i);
+        if(k===asgnKey) continue;
+        const otherSk=a[k];
+        if(!otherSk) continue;
+        const otherSlot=SLOTS[otherSk];
+        if(otherSlot && otherSlot.date===slot.date){
+          warnings.push('· 같은 날 중복 배정 ('+slotHumanLabel(otherSlot)+' 이미 배정됨)');
+          break;
+        }
+      }
+    }
+
+    // 3) 실제 면접일 이후 검증
+    if(slot && slot.date && a.interviewDate && slot.date>=a.interviewDate){
+      warnings.push('· 실제 면접일('+a.interviewDate+') 이후입니다');
+    }
+
+    if(warnings.length){
+      const msg='⚠ 다음 사항을 확인해 주세요.\n\n'+warnings.join('\n')+'\n\n그래도 배정하시겠습니까?';
+      if(!confirm(msg)){ renderStudentList(); return; }
+    }
+  }
+
   const updates={[`${DB}/applicants/${sid}/${asgnKey}`]:v||''};
   // 1회차면 장소도 함께 설정
   if(asgnKey==='asgn'){
@@ -2082,17 +2160,52 @@ function onDrop(e,sk){
   if(!a){dragStudentId=null;return;}
   const allSlotKeys=getApplicantSlotKeys(a);
   if(!allSlotKeys.includes(sk)){alert('해당 학생이 선택한 가능 시간이 아닙니다.');dragStudentId=null;return;}
-  const slot=SLOTS[sk];
-  const used=getSlotUsedByKey(sk);
-  if(slot&&used>=slot.max){alert(`이 시간대는 최대 ${slot.max}명까지만 배정 가능합니다.`);dragStudentId=null;return;}
 
-  // 사이드바에서 드래그한 경우 해당 회차 키 사용,
-  // 캘린더에서 드래그한 경우 빈 회차를 순서대로 자동 탐색
+  // 배정할 회차 결정
   let targetKey=dragAsgnKey||'asgn';
-  const wantCnt=a.appCnt||1;
+  const wantCnt=Math.max(1,parseInt(a.appCnt)||1);
   for(let i=1;i<=wantCnt;i++){
     const k=i===1?'asgn':`asgn${i}`;
     if(!a[k]||k===dragAsgnKey){targetKey=k;break;}
+  }
+
+  const slot=SLOTS[sk];
+  const warnings=[];
+
+  // 1) 정원 초과 (본인의 해당 회차는 제외)
+  let used=0;
+  Object.values(AP).forEach(function(x){
+    for(let i=1;i<=5;i++){
+      const k=(i===1)?'asgn':('asgn'+i);
+      if(x.sid===dragStudentId && k===targetKey) continue;
+      if(x[k]===sk) used++;
+    }
+  });
+  if(slot&&used>=slot.max) warnings.push('· 정원 초과 ('+used+'/'+slot.max+'명)');
+
+  // 2) 같은 날 중복 배정
+  if(slot&&slot.date){
+    for(let i=1;i<=wantCnt;i++){
+      const k=(i===1)?'asgn':('asgn'+i);
+      if(k===targetKey) continue;
+      const otherSk=a[k];
+      if(!otherSk) continue;
+      const otherSlot=SLOTS[otherSk];
+      if(otherSlot&&otherSlot.date===slot.date){
+        warnings.push('· 같은 날 중복 배정 ('+slotHumanLabel(otherSlot)+' 이미 배정됨)');
+        break;
+      }
+    }
+  }
+
+  // 3) 실제 면접일 이후
+  if(slot&&slot.date&&a.interviewDate&&slot.date>=a.interviewDate){
+    warnings.push('· 실제 면접일('+a.interviewDate+') 이후입니다');
+  }
+
+  if(warnings.length){
+    const msg='⚠ 다음 사항을 확인해 주세요.\n\n'+warnings.join('\n')+'\n\n그래도 배정하시겠습니까?';
+    if(!confirm(msg)){dragStudentId=null;dragAsgnKey='asgn';return;}
   }
 
   const places=getPlaces();
@@ -2306,7 +2419,7 @@ function printSchedule(){
   .grp-title.cls{border-left:3px solid #534AB7;}.grp-title.tch{border-left:3px solid #1D9E75;}
   @media print{button{display:none!important;}}</style></head><body>
   <h1>모의면접 시간표</h1>
-  <div class="sub">${viewName} · ${label}</div>
+  <div class="sub">${viewName} · ${label}${hideTeacher?' · 담당교사 비공개':''}</div>
   ${content}<\u0073cript>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
 }
