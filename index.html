@@ -23,6 +23,11 @@ const FIREBASE_CONFIG = {
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f5f5f0;color:#1a1a18;min-height:100vh;}
 .app{max-width:980px;margin:0 auto;padding:16px;transition:max-width .2s;}
 body.admin-wide .app{max-width:1500px;}
+/* 넓은 화면에서 설정 카드 2열 배치 */
+.split2{display:block;}
+body.admin-wide .split2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+body.admin-wide .split2 > div > .card:last-child{margin-bottom:0;}
+@media(max-width:1100px){ body.admin-wide .split2{display:block;} }
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border:1px solid #e5e5e0;border-radius:14px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);}
 .topbar-title{font-size:15px;font-weight:700;color:#1a1a18;}
 .topbar-tabs{display:flex;gap:6px;}
@@ -102,6 +107,7 @@ table.data-tbl td{padding:8px 12px;border-bottom:1px solid #f0f0ec;vertical-alig
 table.data-tbl tr:last-child td{border-bottom:none;}
 table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
 .admin-layout{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start;}
+body.admin-wide .admin-layout{grid-template-columns:1fr 300px;}
 .sidebar-box{border:1.5px solid #e8e8e3;border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .sidebar-head{padding:10px 14px;background:#f7f7f4;border-bottom:1px solid #e8e8e3;font-size:13px;font-weight:700;}
 .sidebar-list{padding:8px;}
@@ -124,7 +130,7 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
 .drop-zone.dz-ok{background:#EDF6E4;outline:2px solid #97C459;}
 .drop-zone.dz-warn{background:#FFF8E1;outline:2px dashed #F0C060;}
 .drop-zone.dz-no{opacity:.35;}
-.ev-chip{border-radius:6px;padding:4px 8px;margin:2px 0;font-size:11px;cursor:pointer;display:block;line-height:1.4;word-break:keep-all;font-weight:500;}
+.ev-chip{border-radius:6px;padding:5px 8px;margin:3px 0;font-size:11px;cursor:pointer;display:block;line-height:1.45;word-break:keep-all;font-weight:500;}
 .ev-chip:hover{opacity:.8;}
 .ec-pur{background:#EEEDFE;color:#3C3489;border:1px solid #AFA9EC;}
 .ec-teal{background:#E1F5EE;color:#085041;border:1px solid #5DCAA5;}
@@ -431,6 +437,8 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
 
   <!-- 모의면접 설정 -->
   <div class="sub-sec" id="sub-slots">
+   <div class="split2">
+    <div>
     <!-- 시간대 설정 -->
     <div class="card">
       <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 시간대 설정</div>
@@ -465,6 +473,8 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
       <div id="place-slot-list" style="margin-top:8px;"></div>
     </div>
 
+    </div>
+    <div>
     <!-- 날짜 기간 설정 -->
     <div class="card">
       <div style="font-size:14px;font-weight:600;margin-bottom:4px;">면접 가능 기간 설정</div>
@@ -497,11 +507,15 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
       </div>
       <div class="sbanner" id="maxcnt-ok">저장되었습니다.</div>
     </div>
+    </div>
+   </div>
   </div>
 
   <!-- 선생님 관리 -->
   <!-- 교사 등록 -->
   <div class="sub-sec" id="sub-teachers">
+   <div class="split2">
+    <div>
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <div style="font-size:14px;font-weight:600;">선생님 등록</div>
@@ -528,9 +542,13 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
       <button class="btn btn-p" onclick="submitTeacher()">등록</button>
       <div class="sbanner" id="t-ok">선생님이 등록되었습니다.</div>
     </div>
+    </div>
+    <div>
     <div class="card" style="padding:0 20px;">
       <div id="t-list" style="padding:4px 0;"></div>
     </div>
+    </div>
+   </div>
   </div>
 
   <!-- 교사 배정 -->
@@ -722,6 +740,8 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
 
   <!-- 신청 불가 날짜 -->
   <div class="sub-sec" id="sub-blocked">
+   <div class="split2">
+    <div>
     <div class="card">
       <div style="font-size:14px;font-weight:600;margin-bottom:6px;">신청 불가 날짜 설정</div>
       <p style="font-size:12px;color:#888;margin-bottom:14px;">지정한 날짜는 학생 신청 화면의 달력에서 선택 불가로 표시됩니다.</p>
@@ -744,6 +764,8 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
       <div style="font-size:13px;font-weight:600;padding:10px 0 6px;">설정된 날짜 목록</div>
       <div id="bd-list" style="padding:0 0 8px;"></div>
     </div>
+    </div>
+    <div>
     <div class="card">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">달력 미리보기</div>
       <div class="cal-outer" style="max-width:400px;">
@@ -759,6 +781,8 @@ table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
         <div class="cal-grid" id="bd-cal-days"></div>
       </div>
     </div>
+    </div>
+   </div>
   </div><!-- sub-blocked -->
 </div><!-- page-admin -->
 
@@ -3035,13 +3059,24 @@ function renderWcal(){
         } else {
           var chipsHtml=getSlotEntries(slotK).map(function(r){
             var a=r.a, round=r.round, key=r.asgnKey;
-            return '<div class="ev-chip '+(CHIP_COLOR[a.type]||'ec-gry')+'" style="display:flex;align-items:center;justify-content:space-between;gap:2px;">'+
-              '<span onclick="showChipModal(\''+a.sid+'\',\''+slotK+'\')" style="cursor:pointer;flex:1;">'+
-                a.name+
-                ((a.appCnt||1)>1?'<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;margin-left:2px;">'+round+'회</span>':'')+
-                (r.place?'<br><span style="font-size:9px;opacity:.7;">'+r.place+'</span>':'')+
+            var tinfo=getTeachersForRound(a, round);
+            var tn=[tinfo.t1,tinfo.t2].map(function(id){return TC[id]&&TC[id].name;}).filter(Boolean).join('·');
+            var schoolLine=a.school?'<div style="font-size:9px;opacity:.85;">'+a.school+'</div>':'';
+            var majorLine=(a.major||a.dept)?'<div style="font-size:9px;opacity:.7;">'+(a.major||a.dept)+'</div>':'';
+            var metaLine='<div style="font-size:9px;opacity:.65;margin-top:1px;">'+
+              (r.place?r.place:'<span style="color:#D44040;">장소 미지정</span>')+
+              (tn?' · '+tn:'')+
+              '</div>';
+            return '<div class="ev-chip '+(CHIP_COLOR[a.type]||'ec-gry')+'" style="display:flex;align-items:flex-start;justify-content:space-between;gap:2px;">'+
+              '<span onclick="showChipModal(\''+a.sid+'\',\''+slotK+'\')" style="cursor:pointer;flex:1;min-width:0;">'+
+                '<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'+
+                  '<span style="font-weight:700;">'+a.name+'</span>'+
+                  ((a.appCnt||1)>1?'<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;">'+round+'회</span>':'')+
+                  '<span style="font-size:8px;background:rgba(0,0,0,.1);border-radius:3px;padding:0 3px;">'+(a.type||'')+'</span>'+
+                '</div>'+
+                schoolLine+majorLine+metaLine+
               '</span>'+
-              '<button onclick="cancelAssignRound(\''+a.sid+'\',\''+key+'\')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;" title="배정 취소">×</button>'+
+              '<button onclick="cancelAssignRound(\''+a.sid+'\',\''+key+'\')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;flex-shrink:0;" title="배정 취소">×</button>'+
             '</div>';
           }).join('');
           h+='<td>'+
@@ -3138,7 +3173,7 @@ function renderSidebar(){
       const asgnKey=(roundNum===1)?'asgn':('asgn'+roundNum);
       if(a[asgnKey])continue;
       cards.push({
-        sid:a.sid, name:a.name, type:a.type, major:a.major||a.dept||'',
+        sid:a.sid, name:a.name, type:a.type, major:a.major||a.dept||'', school:a.school||'',
         interviewDate:a.interviewDate||'',
         round:roundNum, total:wantCnt, asgnKey:asgnKey,
         inView:inView, outCount:outCount, allCount:slotKeys.length
@@ -3176,7 +3211,8 @@ function renderSidebar(){
         (c.total>1?'<span style="font-size:10px;background:#534AB7;color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;">'+c.round+'회차</span>':'')+
         '<span class="badge '+(ITYPE_COLOR[c.type]||'b-gry')+'" style="font-size:10px;margin-left:4px;">'+c.type+'</span>'+
       '</div>'+
-      '<div style="font-size:10px;color:#999;margin-top:2px;">'+(c.major||'')+idLabel+'</div>'+
+      (c.school?'<div style="font-size:10px;color:#666;margin-top:2px;font-weight:600;">'+c.school+'</div>':'')+
+      '<div style="font-size:10px;color:#999;margin-top:1px;">'+(c.major||'')+idLabel+'</div>'+
       '<div class="sc-sub" style="margin-top:4px;line-height:1.6;">'+timeHtml+'</div>'+
     '</div>';
   }).join('');
@@ -3356,20 +3392,24 @@ function buildWeekTable(dates, students, hideTeacher){
         const dk=dateKey(d.getFullYear(),d.getMonth(),d.getDate());
         const slotK=`${dk.replace(/-/g,'')}_${t.key}`;
         const chips=students.filter(a=>a.asgn===slotK).map(a=>{
-          // 배치된 교사 정보 (TA에서 가져옴)
           let teacherHtml='';
           if(!hideTeacher){
-            // 이 슬롯에 배치된 교사 찾기
             const taEntries=Object.values(TA).filter(ta=>ta.date===dk&&ta.timeKey===t.key&&ta.place===a.place);
             if(taEntries.length){
               const ta=taEntries[0];
               const t1=TC[ta.t1],t2=TC[ta.t2];
               const names=[t1&&t1.name,t2&&t2.name].filter(Boolean).join(' · ');
-              if(names) teacherHtml=`<span style="font-size:9px;opacity:.65;">${names}</span>`;
+              if(names) teacherHtml=`<div style="font-size:9px;opacity:.65;">${names}</div>`;
             }
           }
           return`<div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
-            <div>${a.name}${a.place?`<span style="font-size:9px;opacity:.7;margin-left:4px;">${a.place}</span>`:''}</div>
+            <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
+              <span style="font-weight:700;">${a.name}</span>
+              <span style="font-size:8px;background:rgba(0,0,0,.1);border-radius:3px;padding:0 3px;">${a.type||''}</span>
+            </div>
+            ${a.school?`<div style="font-size:9px;opacity:.85;">${a.school}</div>`:''}
+            ${(a.major||a.dept)?`<div style="font-size:9px;opacity:.7;">${a.major||a.dept}</div>`:''}
+            ${a.place?`<div style="font-size:9px;opacity:.6;">${a.place}</div>`:''}
             ${teacherHtml}
           </div>`;
         }).join('');
