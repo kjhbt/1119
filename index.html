@@ -108,6 +108,8 @@ table.data-tbl tr:last-child td{border-bottom:none;}
 table.data-tbl tr:hover td{background:rgba(0,0,0,.025);}
 .admin-layout{display:grid;grid-template-columns:1fr 220px;gap:14px;align-items:start;}
 body.admin-wide .admin-layout{grid-template-columns:1fr 300px;}
+body.admin-wide #sub-blocked .cday{min-height:46px;font-size:13px;padding:7px 2px;}
+body.admin-wide #sub-blocked .cal-grid{padding:10px 8px;}
 .sidebar-box{border:1.5px solid #e8e8e3;border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .sidebar-head{padding:10px 14px;background:#f7f7f4;border-bottom:1px solid #e8e8e3;font-size:13px;font-weight:700;}
 .sidebar-list{padding:8px;}
@@ -473,6 +475,18 @@ body.admin-wide .admin-layout{grid-template-columns:1fr 300px;}
       <div id="place-slot-list" style="margin-top:8px;"></div>
     </div>
 
+    <!-- 최대 횟수 설정 -->
+    <div class="card">
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px;">모의면접 최대 신청 횟수</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">학생 1명이 신청할 수 있는 최대 횟수입니다.</p>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="number" id="max-cnt-input" min="1" max="10" value="3" style="width:80px;">
+        <button class="btn btn-p" onclick="saveMaxCnt()">저장</button>
+        <span style="font-size:12px;color:#888;">현재: <span id="cur-max-cnt">3</span>회</span>
+      </div>
+      <div class="sbanner" id="maxcnt-ok">저장되었습니다.</div>
+    </div>
+
     </div>
     <div>
     <!-- 날짜 기간 설정 -->
@@ -497,16 +511,6 @@ body.admin-wide .admin-layout{grid-template-columns:1fr 300px;}
       <div id="slot-list" style="padding:0 0 8px;"></div>
     </div>
 
-    <!-- 최대 횟수 설정 -->
-    <div class="card">
-      <div style="font-size:14px;font-weight:600;margin-bottom:10px;">모의면접 최대 신청 횟수</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <input type="number" id="max-cnt-input" min="1" max="10" value="3" style="width:80px;">
-        <button class="btn btn-p" onclick="saveMaxCnt()">저장</button>
-        <span style="font-size:12px;color:#888;">현재: <span id="cur-max-cnt">3</span>회</span>
-      </div>
-      <div class="sbanner" id="maxcnt-ok">저장되었습니다.</div>
-    </div>
     </div>
    </div>
   </div>
@@ -768,7 +772,7 @@ body.admin-wide .admin-layout{grid-template-columns:1fr 300px;}
     <div>
     <div class="card">
       <div style="font-size:13px;font-weight:600;margin-bottom:10px;">달력 미리보기</div>
-      <div class="cal-outer" style="max-width:400px;">
+      <div class="cal-outer" style="max-width:520px;margin:0 auto;">
         <div class="cal-head">
           <button class="cal-nav" onclick="bdCalPrev()">&#8249;</button>
           <span id="bd-cal-title"></span>
@@ -877,6 +881,7 @@ function loadData(){
     for(var i=0;i<vals.length;i++){if(!vals[i])return;}
     initialRenderDone=true;
     migrateLegacyTeachers();
+    cleanOrphanTeacherAssigns();
     maxCnt=SETTINGS.maxCnt||3;
     var el1=document.getElementById('max-cnt-label');
     var el2=document.getElementById('cur-max-cnt');
@@ -975,6 +980,32 @@ function loadData(){
   });
 }
 
+
+// 학생이 없는 교사 배치(유령 데이터) 정리
+var _cleaned=false;
+function cleanOrphanTeacherAssigns(){
+  if(_cleaned) return;
+  _cleaned=true;
+  // 현재 유효한 taKey 집합 구성
+  var valid={};
+  Object.keys(AP).forEach(function(sid){
+    var a=AP[sid];
+    var wantCnt=Math.max(1,parseInt(a.appCnt)||1);
+    for(var i=1;i<=wantCnt;i++){
+      var info=getTaKeyForRound(a, i);
+      if(info) valid[info.key]=true;
+    }
+  });
+  var updates={}, n=0;
+  Object.keys(TA||{}).forEach(function(k){
+    if(!valid[k]){ updates[DB+'/teacher_assigns/'+k]=null; n++; }
+  });
+  if(n){
+    db.ref().update(updates).then(function(){
+      console.log('학생이 없는 교사 배치 '+n+'건을 정리했습니다.');
+    });
+  }
+}
 
 // 구버전 applicants/teacher1 데이터를 teacher_assigns로 1회 이관
 var _migrated=false;
@@ -1810,10 +1841,13 @@ function renderTaWcal(){
             var tr=getStudentTrack(a);
             var trBg=tr==='sci'?'#E1F5EE':tr==='human'?'#EEEDFE':'#F1EFE8';
             var trCol=tr==='sci'?'#085041':tr==='human'?'#3C3489':'#666';
-            return '<div style="background:'+trBg+';color:'+trCol+';border-radius:4px;padding:2px 5px;margin:2px 0;font-size:9px;">'+
-              '<span style="font-weight:700;">'+a.name+'</span>'+
-              (tr?'<span style="font-size:8px;opacity:.75;margin-left:3px;">'+trackLabel(tr)+'</span>':'')+
-              (a.major||a.dept?'<span style="opacity:.8;margin-left:3px;">'+(a.major||a.dept)+'</span>':'')+
+            var uni=[a.school||'',(a.major||a.dept||'')].filter(Boolean).join(' ');
+            return '<div style="background:'+trBg+';color:'+trCol+';border-radius:4px;padding:3px 5px;margin:2px 0;font-size:9px;line-height:1.45;">'+
+              '<div><span style="font-weight:700;">'+a.name+'</span>'+
+                (a.type?'<span style="opacity:.75;margin-left:3px;">('+a.type+')</span>':'')+
+                (tr?'<span style="font-size:8px;opacity:.6;margin-left:3px;">'+trackLabel(tr)+'</span>':'')+
+              '</div>'+
+              (uni?'<div style="opacity:.8;">'+uni+'</div>':'')+
             '</div>';
           }).join('');
 
@@ -2497,7 +2531,13 @@ function setAsgnRound(sid, asgnKey, v){
     }
   }
 
+  const roundNum=(asgnKey==='asgn')?1:parseInt(asgnKey.replace('asgn',''));
+  // 이전 배정에 연결된 교사 배치 제거 (시간이 바뀌면 무효)
+  const prevInfo=a?getTaKeyForRound(a, roundNum):null;
+
   const updates={[`${DB}/applicants/${sid}/${asgnKey}`]:v||''};
+  if(prevInfo) updates[`${DB}/teacher_assigns/${prevInfo.key}`]=null;
+
   // 1회차면 장소도 함께 설정
   if(asgnKey==='asgn'){
     const places=getPlaces();
@@ -2563,7 +2603,30 @@ function setTeacherForRound(sid, roundNum, slotIdx, v){
 function setTeacherRound(sid, tKey, v){ /* 구버전 호환 (미사용) */ }
 function setPlace(sid,v){ setPlaceRound(sid,'place',v); }
 function setTeacher(sid,slot,v){ setTeacherRound(sid,`teacher${slot}`,v); }
-function delApplicant(sid){ if(confirm(`${(AP[sid]&&AP[sid].name)||sid} 지원자를 삭제하시겠습니까?`)) dbRef(`applicants/${sid}`).remove(); }
+function delApplicant(sid){
+  var a=AP[sid];
+  if(!a){ dbRef('applicants/'+sid).remove(); return; }
+
+  // 이 학생의 모든 회차에 연결된 교사 배치 수집
+  var wantCnt=Math.max(1,parseInt(a.appCnt)||1);
+  var taKeys=[];
+  for(var i=1;i<=wantCnt;i++){
+    var info=getTaKeyForRound(a, i);
+    if(!info) continue;
+    var ta=TA[info.key];
+    if(ta&&(ta.t1||ta.t2)) taKeys.push(info.key);
+  }
+
+  var msg=(a.name||sid)+' 지원자를 삭제하시겠습니까?\n\n';
+  if(taKeys.length) msg+='· 연결된 교사 배치 '+taKeys.length+'건도 함께 삭제됩니다.\n';
+  msg+='\n이 작업은 되돌릴 수 없습니다.';
+  if(!confirm(msg)) return;
+
+  var updates={};
+  updates[DB+'/applicants/'+sid]=null;
+  taKeys.forEach(function(k){ updates[DB+'/teacher_assigns/'+k]=null; });
+  db.ref().update(updates);
+}
 
 // ── 배정 대시보드 ─────────────────────────────────────
 function renderAssignDashboard(){
@@ -2974,21 +3037,35 @@ function confirmAutoAssign(){
 function autoAssign(){ showAutoAssignModal(); }
 
 function resetAllAssign(){
-  if(!confirm('모든 배정을 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'))return;
-  const updates={};
-  Object.values(AP).forEach(a=>{
-    updates[`${DB}/applicants/${a.sid}/asgn`]='';
-    updates[`${DB}/applicants/${a.sid}/place`]='';
-    updates[`${DB}/applicants/${a.sid}/teacher1`]='';
-    updates[`${DB}/applicants/${a.sid}/teacher2`]='';
-    for(let i=2;i<=5;i++){
-      updates[`${DB}/applicants/${a.sid}/asgn${i}`]=null;
-      updates[`${DB}/applicants/${a.sid}/place${i}`]=null;
-      updates[`${DB}/applicants/${a.sid}/teacher1_${i}`]=null;
-      updates[`${DB}/applicants/${a.sid}/teacher2_${i}`]=null;
+  var taCount=Object.keys(TA||{}).length;
+  var msg='모든 배정을 초기화하시겠습니까?\n\n';
+  if(taCount) msg+='· 교사 배치 '+taCount+'건도 함께 삭제됩니다.\n';
+  msg+='\n이 작업은 되돌릴 수 없습니다.';
+  if(!confirm(msg))return;
+
+  var updates={};
+  Object.values(AP).forEach(function(a){
+    updates[DB+'/applicants/'+a.sid+'/asgn']='';
+    updates[DB+'/applicants/'+a.sid+'/place']='';
+    for(var i=2;i<=5;i++){
+      updates[DB+'/applicants/'+a.sid+'/asgn'+i]=null;
+      updates[DB+'/applicants/'+a.sid+'/place'+i]=null;
+    }
+    // 구버전 교사 필드도 정리
+    updates[DB+'/applicants/'+a.sid+'/teacher1']=null;
+    updates[DB+'/applicants/'+a.sid+'/teacher2']=null;
+    for(var j=2;j<=5;j++){
+      updates[DB+'/applicants/'+a.sid+'/teacher1_'+j]=null;
+      updates[DB+'/applicants/'+a.sid+'/teacher2_'+j]=null;
     }
   });
-  db.ref().update(updates).then(()=>{alert('배정이 초기화되었습니다.');renderAssignDashboard();});
+  // 교사 배치 전체 삭제
+  updates[DB+'/teacher_assigns']=null;
+
+  db.ref().update(updates).then(function(){
+    alert('배정이 초기화되었습니다.');
+    renderAssignDashboard();
+  });
 }
 
 // ── 위클리 캘린더 ─────────────────────────────────────
@@ -3061,20 +3138,20 @@ function renderWcal(){
             var a=r.a, round=r.round, key=r.asgnKey;
             var tinfo=getTeachersForRound(a, round);
             var tn=[tinfo.t1,tinfo.t2].map(function(id){return TC[id]&&TC[id].name;}).filter(Boolean).join('·');
-            var schoolLine=a.school?'<div style="font-size:9px;opacity:.85;">'+a.school+'</div>':'';
-            var majorLine=(a.major||a.dept)?'<div style="font-size:9px;opacity:.7;">'+(a.major||a.dept)+'</div>':'';
-            var metaLine='<div style="font-size:9px;opacity:.65;margin-top:1px;">'+
-              (r.place?r.place:'<span style="color:#D44040;">장소 미지정</span>')+
-              (tn?' · '+tn:'')+
+            // 1줄: 이름 (면접유형)  2줄: 대학명 학과명  3줄: 장소  4줄: 담당교사
+            var line1='<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'+
+              '<span style="font-weight:700;">'+a.name+'</span>'+
+              ((a.appCnt||1)>1?'<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;">'+round+'회</span>':'')+
+              (a.type?'<span style="font-size:9px;opacity:.75;">('+a.type+')</span>':'')+
               '</div>';
+            var uni=[a.school||'',(a.major||a.dept||'')].filter(Boolean).join(' ');
+            var line2=uni?'<div style="font-size:9px;opacity:.8;">'+uni+'</div>':'';
+            var line3='<div style="font-size:9px;opacity:.65;">'+
+              (r.place?r.place:'<span style="color:#D44040;">장소 미지정</span>')+'</div>';
+            var line4=tn?'<div style="font-size:9px;opacity:.65;">'+tn+'</div>':'';
             return '<div class="ev-chip '+(CHIP_COLOR[a.type]||'ec-gry')+'" style="display:flex;align-items:flex-start;justify-content:space-between;gap:2px;">'+
               '<span onclick="showChipModal(\''+a.sid+'\',\''+slotK+'\')" style="cursor:pointer;flex:1;min-width:0;">'+
-                '<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">'+
-                  '<span style="font-weight:700;">'+a.name+'</span>'+
-                  ((a.appCnt||1)>1?'<span style="font-size:8px;background:rgba(0,0,0,.15);border-radius:3px;padding:0 3px;">'+round+'회</span>':'')+
-                  '<span style="font-size:8px;background:rgba(0,0,0,.1);border-radius:3px;padding:0 3px;">'+(a.type||'')+'</span>'+
-                '</div>'+
-                schoolLine+majorLine+metaLine+
+                line1+line2+line3+line4+
               '</span>'+
               '<button onclick="cancelAssignRound(\''+a.sid+'\',\''+key+'\')" style="background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:12px;padding:0;line-height:1;flex-shrink:0;" title="배정 취소">×</button>'+
             '</div>';
@@ -3320,7 +3397,10 @@ function onDrop(e,sk){
   const places=getPlaces();
   const placeIdx=used%(places.length||4);
   const place=(places[placeIdx]&&places[placeIdx].place)||'';
+  const targetRound=(targetKey==='asgn')?1:parseInt(targetKey.replace('asgn',''));
+  const prevInfo2=getTaKeyForRound(a, targetRound);
   const updates={[`${DB}/applicants/${dragStudentId}/${targetKey}`]:sk};
+  if(prevInfo2) updates[`${DB}/teacher_assigns/${prevInfo2.key}`]=null;
   if(targetKey==='asgn') updates[`${DB}/applicants/${dragStudentId}/place`]=place;
   db.ref().update(updates).then(()=>{clearSlotHighlight();dragStudentId=null;dragAsgnKey='asgn';});
 }
@@ -3402,14 +3482,14 @@ function buildWeekTable(dates, students, hideTeacher){
               if(names) teacherHtml=`<div style="font-size:9px;opacity:.65;">${names}</div>`;
             }
           }
+          const uni=[a.school||'',(a.major||a.dept||'')].filter(Boolean).join(' ');
           return`<div class="ev-chip ${CHIP_COLOR[a.type]||'ec-gry'}" onclick="showChipModal('${a.sid}','${slotK}')">
             <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
               <span style="font-weight:700;">${a.name}</span>
-              <span style="font-size:8px;background:rgba(0,0,0,.1);border-radius:3px;padding:0 3px;">${a.type||''}</span>
+              ${a.type?`<span style="font-size:9px;opacity:.75;">(${a.type})</span>`:''}
             </div>
-            ${a.school?`<div style="font-size:9px;opacity:.85;">${a.school}</div>`:''}
-            ${(a.major||a.dept)?`<div style="font-size:9px;opacity:.7;">${a.major||a.dept}</div>`:''}
-            ${a.place?`<div style="font-size:9px;opacity:.6;">${a.place}</div>`:''}
+            ${uni?`<div style="font-size:9px;opacity:.8;">${uni}</div>`:''}
+            ${a.place?`<div style="font-size:9px;opacity:.65;">${a.place}</div>`:''}
             ${teacherHtml}
           </div>`;
         }).join('');
