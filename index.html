@@ -290,10 +290,44 @@ body.admin-wide #sub-blocked .cal-grid{padding:10px 8px;}
 
 <div id="loading-box" class="loading-overlay" style="display:block;">🔄 Firebase 연결 중...</div>
 
+
 <!-- ═══════════════════════════════════════════════
      지원자 등록
 ═══════════════════════════════════════════════ -->
 <div class="page" id="page-apply">
+  <!-- 시작 화면 -->
+  <div id="apply-intro" style="display:none;">
+    <div class="card" style="text-align:center;padding:48px 28px;">
+      <div style="font-size:44px;margin-bottom:14px;">📝</div>
+      <div style="font-size:22px;font-weight:700;color:#1a1a18;margin-bottom:8px;">모의면접 신청</div>
+      <p style="font-size:14px;color:#888;line-height:1.8;margin-bottom:8px;">
+        아래 버튼을 누르면 신청 화면이 열립니다.
+      </p>
+      <p style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:26px;">
+        가능한 날짜와 시간을 최대한 많이 선택해 주세요.<br>선착순으로 배정됩니다.
+      </p>
+      <button class="btn btn-p" onclick="startApply()" style="padding:14px 40px;font-size:16px;border-radius:12px;">
+        신청 시작하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 완료 화면 -->
+  <div id="apply-done" style="display:none;">
+    <div class="card" style="text-align:center;padding:48px 28px;">
+      <div style="font-size:44px;margin-bottom:14px;">✅</div>
+      <div style="font-size:22px;font-weight:700;color:#1D9E75;margin-bottom:10px;">신청이 완료되었습니다</div>
+      <p style="font-size:14px;color:#666;line-height:1.8;margin-bottom:6px;" id="apply-done-name"></p>
+      <p style="font-size:13px;color:#888;line-height:1.8;margin-bottom:28px;">
+        면접 시간은 배정 후 담당 선생님을 통해 안내됩니다.
+      </p>
+      <button class="btn" onclick="restartApply()" style="padding:11px 26px;font-size:14px;">다른 학생 신청하기</button>
+      <div style="font-size:12px;color:#aaa;margin-top:18px;">신청이 끝났으면 창을 닫아 주세요.</div>
+    </div>
+  </div>
+
+  <!-- 신청 폼 -->
+  <div id="apply-form">
   <div class="card">
     <div class="notice-box">
       ※ 가능한 날짜와 시간을 <strong>최대한 많이 선택</strong>해 주세요. 선착순으로 배정됩니다.
@@ -376,6 +410,7 @@ body.admin-wide #sub-blocked .cal-grid{padding:10px 8px;}
       <button class="btn btn-p" onclick="submitApply()" style="padding:10px 24px;font-size:14px;">제출하기</button>
     </div>
   </div>
+  </div><!-- apply-form -->
 </div>
 
 <!-- ═══════════════════════════════════════════════
@@ -1322,6 +1357,32 @@ function onTypeChange(){
   document.getElementById('univ-extra').style.display=t==='대학 자체 질문'?'block':'none';
 }
 
+// ── 학생 신청 화면 전환 ───────────────────────────────
+function showApplyStep(step){
+  var intro=document.getElementById('apply-intro');
+  var form=document.getElementById('apply-form');
+  var done=document.getElementById('apply-done');
+  if(intro) intro.style.display=(step==='intro')?'block':'none';
+  if(form)  form.style.display=(step==='form')?'block':'none';
+  if(done)  done.style.display=(step==='done')?'block':'none';
+  var tb=document.querySelector('.topbar');
+  if(tb) tb.style.display=(step==='form')?'':'none';
+}
+function startApply(){
+  showApplyStep('form');
+  window.scrollTo(0,0);
+}
+function finishApply(name){
+  var el=document.getElementById('apply-done-name');
+  if(el) el.textContent=name?(name+' 학생의 신청이 접수되었습니다.'):'';
+  showApplyStep('done');
+  window.scrollTo(0,0);
+}
+function restartApply(){
+  showApplyStep('intro');
+  window.scrollTo(0,0);
+}
+
 // ── 지원자 등록 ───────────────────────────────────────
 function submitApply(){
   const sid=document.getElementById('f-sid').value.trim();
@@ -1364,7 +1425,8 @@ function submitApply(){
       selTimes={};focusDate=null;
       document.getElementById('period-sec').style.display='none';
       appCnt=1;document.getElementById('cnt-display').textContent=1;
-      renderTimeTags();renderCal();flash('apply-ok');
+      renderTimeTags();renderCal();
+      finishApply(name);
     }).catch(e=>showErr('apply-err','저장 실패: '+e.message));
   });
 }
@@ -3782,6 +3844,7 @@ function initMode(){
 
   if(curMode==='admin'){
     document.body.classList.add('admin-wide');
+    var af=document.getElementById('apply-form'); if(af) af.style.display='block';
     document.getElementById('topbar-title').textContent='모의면접 관리자';
     badge.textContent='관리자 모드';badge.className='mode-badge mode-admin';
     tb.innerHTML=`<button class="ttab active" id="tab-admin" onclick="goPage('admin',this)">관리자 대시보드</button>
@@ -3790,6 +3853,7 @@ function initMode(){
 
   }else if(curMode==='schedule'){
     document.body.classList.add('admin-wide');
+    var af2=document.getElementById('apply-form'); if(af2) af2.style.display='block';
     document.getElementById('topbar-title').textContent='모의면접 시간표';
     badge.textContent='시간표';badge.className='mode-badge mode-student';
     tb.innerHTML=`<button class="ttab active" id="tab-schedule" onclick="goPage('schedule',this)">시간표</button>`;
@@ -3800,6 +3864,7 @@ function initMode(){
     badge.textContent='학생 모드';badge.className='mode-badge mode-student';
     tb.innerHTML=`<button class="ttab active" id="tab-apply" onclick="goPage('apply',this)">지원자 등록</button>`;
     goPage('apply',tb.querySelector('#tab-apply'));
+    showApplyStep('intro');
   }
 }
 function goPage(id,btn){
