@@ -935,6 +935,7 @@ function loadData(){
     var subId=getActiveSubId();
     if(subId==='sub-tassign'){ renderTaWcal(); renderTeacherAssigns(); }
     else if(subId==='sub-teachers'){ renderTeachers(); }
+    else if(subId==='sub-students'){ renderStudentList(); }
   });
 
   dbRef('blocked_dates').on('value',function(snap){
@@ -944,6 +945,7 @@ function loadData(){
     if(getActivePageId()==='page-apply'){ renderCal(); return; }
     var subId=getActiveSubId();
     if(subId==='sub-blocked'){ renderBlockedDates(); renderBdCal(); }
+    else if(subId==='sub-slots'){ renderSlotList(); }
   });
 
   dbRef('slots').on('value',function(snap){
@@ -1671,8 +1673,45 @@ function toggleBlockedDay(tid, dayNum, checked){
   days.sort();
   dbRef(`teachers/${tid}/blockedDays`).set(days).then(()=>renderTaWcal());
 }
-function delTeacher(id){ if(confirm('삭제하시겠습니까?')) dbRef(`teachers/${id}`).remove(); }
-function clearAllTeachers(){ if(confirm('모두 삭제하시겠습니까?')) dbRef('teachers').remove().then(()=>alert('초기화 완료')); }
+function delTeacher(id){
+  var t=TC[id];
+  var name=(t&&t.name)||id;
+  // 이 교사가 배치된 슬롯 수집
+  var refs=[];
+  Object.values(TA||{}).forEach(function(ta){
+    if(ta.t1===id||ta.t2===id) refs.push(ta);
+  });
+  var msg='「'+name+'」 선생님을 삭제하시겠습니까?\n\n';
+  if(refs.length) msg+='· 배치된 '+refs.length+'건에서 해당 선생님이 제외됩니다.\n';
+  msg+='\n이 작업은 되돌릴 수 없습니다.';
+  if(!confirm(msg)) return;
+
+  var updates={};
+  updates[DB+'/teachers/'+id]=null;
+  refs.forEach(function(ta){
+    var t1=(ta.t1===id)?'':(ta.t1||'');
+    var t2=(ta.t2===id)?'':(ta.t2||'');
+    if(!t1&&!t2){
+      updates[DB+'/teacher_assigns/'+ta.key]=null;
+    } else {
+      updates[DB+'/teacher_assigns/'+ta.key+'/t1']=t1;
+      updates[DB+'/teacher_assigns/'+ta.key+'/t2']=t2;
+    }
+  });
+  db.ref().update(updates);
+}
+function clearAllTeachers(){
+  var n=Object.keys(TC||{}).length;
+  var taN=Object.keys(TA||{}).length;
+  var msg='등록된 선생님 '+n+'명을 모두 삭제하시겠습니까?\n\n';
+  if(taN) msg+='· 교사 배치 '+taN+'건도 함께 삭제됩니다.\n';
+  msg+='\n이 작업은 되돌릴 수 없습니다.';
+  if(!confirm(msg)) return;
+  var updates={};
+  updates[DB+'/teachers']=null;
+  updates[DB+'/teacher_assigns']=null;
+  db.ref().update(updates).then(function(){ alert('초기화 완료'); });
+}
 
 function sortedTeachers(){
   return Object.values(TC).sort((a,b)=>{
@@ -2281,14 +2320,12 @@ function delTeacherAssign(key){if(confirm('삭제하시겠습니까?'))dbRef(`te
 
 // ── 통계 & 필터 ───────────────────────────────────────
 function updateStats(){
-  const apList=Object.values(AP);
+  var apList=Object.values(AP);
+  var fullyAssigned=0;
+  apList.forEach(function(a){
+    if(getAssignStatus(a).status==='y') fullyAssigned++;
+  });
   document.getElementById('st-total').textContent=apList.length;
-  // 모든 희망 횟수가 채워진 학생 수
-  const fullyAssigned=apList.filter(a=>{
-    const wantCnt=Math.max(1,parseInt(a.appCnt)||1);
-    for(let i=1;i<=wantCnt;i++){if(!a[i===1?'asgn':`asgn${i}`])return false;}
-    return true;
-  }).length;
   document.getElementById('st-asgn').textContent=fullyAssigned;
   document.getElementById('st-pend').textContent=apList.length-fullyAssigned;
   document.getElementById('st-tch').textContent=Object.values(TC).length;
