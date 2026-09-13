@@ -297,17 +297,58 @@ body.admin-wide #sub-blocked .cal-grid{padding:10px 8px;}
 <div class="page" id="page-apply">
   <!-- 시작 화면 -->
   <div id="apply-intro" style="display:none;">
-    <div class="card" style="text-align:center;padding:48px 28px;">
+    <div class="card" style="text-align:center;padding:44px 28px;">
       <div style="font-size:44px;margin-bottom:14px;">📝</div>
-      <div style="font-size:22px;font-weight:700;color:#1a1a18;margin-bottom:8px;">모의면접 신청</div>
-      <p style="font-size:14px;color:#888;line-height:1.8;margin-bottom:8px;">
-        아래 버튼을 누르면 신청 화면이 열립니다.
+      <div style="font-size:22px;font-weight:700;color:#1a1a18;margin-bottom:8px;">모의면접</div>
+      <p style="font-size:13px;color:#999;line-height:1.7;margin-bottom:30px;">
+        신청하거나 배정 결과를 확인할 수 있습니다.
       </p>
-      <p style="font-size:12px;color:#aaa;line-height:1.7;margin-bottom:26px;">
-        가능한 날짜와 시간을 최대한 많이 선택해 주세요.<br>선착순으로 배정됩니다.
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto;">
+        <button class="btn btn-p" onclick="startApply()" style="padding:15px 20px;font-size:15px;border-radius:12px;">
+          신청 시작하기
+        </button>
+        <button class="btn" onclick="showCheckStep()" style="padding:15px 20px;font-size:15px;border-radius:12px;border-color:#534AB7;color:#534AB7;font-weight:700;">
+          배정 결과 확인하기
+        </button>
+      </div>
+      <p style="font-size:11px;color:#c4c4c4;line-height:1.7;margin-top:24px;">
+        가능한 날짜와 시간을 최대한 많이 선택해 주세요 · 선착순 배정
       </p>
-      <button class="btn btn-p" onclick="startApply()" style="padding:14px 40px;font-size:16px;border-radius:12px;">
-        신청 시작하기
+    </div>
+  </div>
+
+  <!-- 배정 결과 조회 -->
+  <div id="apply-check" style="display:none;">
+    <div class="card" style="padding:36px 28px;max-width:460px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:36px;margin-bottom:10px;">🔍</div>
+        <div style="font-size:19px;font-weight:700;color:#1a1a18;">배정 결과 확인</div>
+        <p style="font-size:12px;color:#999;margin-top:6px;">본인 확인을 위해 학번과 이름을 입력해 주세요.</p>
+      </div>
+      <div class="fg" style="margin-bottom:12px;">
+        <label>학번</label>
+        <input type="text" id="ck-sid" placeholder="학번 4~5자리" maxlength="5" inputmode="numeric" onkeydown="if(event.key==='Enter')doCheckResult();">
+      </div>
+      <div class="fg" style="margin-bottom:16px;">
+        <label>이름</label>
+        <input type="text" id="ck-name" placeholder="홍길동" autocomplete="name" onkeydown="if(event.key==='Enter')doCheckResult();">
+      </div>
+      <div class="errbanner" id="ck-err" style="margin-top:0;margin-bottom:12px;"></div>
+      <button class="btn btn-p" onclick="doCheckResult()" style="width:100%;padding:13px;font-size:15px;border-radius:10px;">
+        조회하기
+      </button>
+      <button class="btn" onclick="restartApply()" style="width:100%;padding:11px;font-size:13px;margin-top:8px;">
+        돌아가기
+      </button>
+    </div>
+  </div>
+
+  <!-- 조회 결과 -->
+  <div id="apply-result" style="display:none;">
+    <div class="card" style="padding:32px 26px;max-width:460px;margin:0 auto;">
+      <div id="ck-result-body"></div>
+      <button class="btn" onclick="restartApply()" style="width:100%;padding:12px;font-size:14px;margin-top:20px;">
+        처음으로
       </button>
     </div>
   </div>
@@ -942,6 +983,15 @@ function loadData(){
     received.applicants=true;
     if(!initialRenderDone){checkAndRender();return;}
     updateStats();
+    // 학생 화면에서 조회 결과를 보고 있으면 갱신
+    if(getActivePageId()==='page-apply'){
+      var rv=document.getElementById('apply-result');
+      if(rv&&rv.style.display==='block'){
+        var cs=document.getElementById('ck-sid'), cn=document.getElementById('ck-name');
+        if(cs&&cn&&cs.value&&cn.value) doCheckResult();
+      }
+      return;
+    }
     if(isScheduleVisible()){ renderSchView(); return; }
     var subId=getActiveSubId();
     if(subId==='sub-students'){ syncAdminFilters(); renderStudentList(); }
@@ -1359,14 +1409,93 @@ function onTypeChange(){
 
 // ── 학생 신청 화면 전환 ───────────────────────────────
 function showApplyStep(step){
-  var intro=document.getElementById('apply-intro');
-  var form=document.getElementById('apply-form');
-  var done=document.getElementById('apply-done');
-  if(intro) intro.style.display=(step==='intro')?'block':'none';
-  if(form)  form.style.display=(step==='form')?'block':'none';
-  if(done)  done.style.display=(step==='done')?'block':'none';
+  ['apply-intro','apply-form','apply-done','apply-check','apply-result'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  var map={intro:'apply-intro',form:'apply-form',done:'apply-done',check:'apply-check',result:'apply-result'};
+  var target=document.getElementById(map[step]);
+  if(target) target.style.display='block';
   var tb=document.querySelector('.topbar');
   if(tb) tb.style.display=(step==='form')?'':'none';
+}
+
+// ── 배정 결과 조회 ────────────────────────────────────
+function showCheckStep(){
+  var s=document.getElementById('ck-sid'), n=document.getElementById('ck-name');
+  if(s)s.value=''; if(n)n.value='';
+  var e=document.getElementById('ck-err'); if(e)e.style.display='none';
+  showApplyStep('check');
+  window.scrollTo(0,0);
+}
+
+function doCheckResult(){
+  var sid=(document.getElementById('ck-sid').value||'').trim();
+  var name=(document.getElementById('ck-name').value||'').trim();
+  if(!sid||!name){ showErr('ck-err','학번과 이름을 모두 입력해 주세요.'); return; }
+  if(!/^\d{4,5}$/.test(sid)){ showErr('ck-err','학번은 4~5자리 숫자여야 합니다.'); return; }
+
+  var a=AP[sid];
+  if(!a || String(a.name).trim()!==name){
+    showErr('ck-err','일치하는 신청 내역이 없습니다. 학번과 이름을 확인해 주세요.');
+    return;
+  }
+
+  var st=getAssignStatus(a);
+  var wantCnt=st.want;
+
+  // 배정된 회차 목록 (날짜/시간/장소만 — 교사 정보 제외)
+  var rows=[];
+  for(var i=1;i<=wantCnt;i++){
+    var sk=(i===1)?a.asgn:a['asgn'+i];
+    if(!sk) continue;
+    var slot=SLOTS[sk];
+    if(!slot) continue;
+    var place=a[(i===1)?'place':('place'+i)]||'';
+    rows.push({round:i, slot:slot, place:place});
+  }
+
+  var html='';
+  html+='<div style="text-align:center;margin-bottom:20px;">'+
+    '<div style="font-size:19px;font-weight:700;color:#1a1a18;">'+a.name+'</div>'+
+    '<div style="font-size:12px;color:#999;margin-top:3px;font-family:monospace;">'+a.sid+'</div>'+
+    '<div style="margin-top:8px;"><span class="badge '+(ITYPE_COLOR[a.type]||'b-gry')+'">'+(a.type||'')+'</span></div>'+
+    ((a.school||a.major)?'<div style="font-size:12px;color:#888;margin-top:6px;">'+[a.school||'',(a.major||a.dept||'')].filter(Boolean).join(' ')+'</div>':'')+
+    '</div>';
+
+  if(!rows.length){
+    html+='<div style="background:#FFFBEF;border:1px solid #F0C060;border-radius:10px;padding:20px;text-align:center;">'+
+      '<div style="font-size:28px;margin-bottom:8px;">⏳</div>'+
+      '<div style="font-size:14px;font-weight:700;color:#7A5500;margin-bottom:6px;">배정 준비 중입니다</div>'+
+      '<div style="font-size:12px;color:#8a6a20;line-height:1.7;">신청은 정상 접수되었습니다.<br>배정이 완료되면 이 화면에서 확인하실 수 있습니다.</div>'+
+      '</div>';
+  } else {
+    html+='<div style="font-size:12px;color:#888;margin-bottom:8px;">배정 결과 <strong style="color:#534AB7;">'+rows.length+'/'+wantCnt+'회</strong></div>';
+    html+=rows.map(function(r){
+      var parts=r.slot.date.split('-');
+      var dt=new Date(+parts[0],+parts[1]-1,+parts[2]);
+      return '<div style="background:#E1F5EE;border:1px solid #5DCAA5;border-radius:10px;padding:14px 16px;margin-bottom:8px;">'+
+        (wantCnt>1?'<div style="font-size:10px;font-weight:700;color:#0F6E56;margin-bottom:5px;">'+r.round+'회차</div>':'')+
+        '<div style="font-size:16px;font-weight:700;color:#085041;">'+
+          (+parts[1])+'월 '+(+parts[2])+'일 ('+WDAYS[dt.getDay()]+')'+
+        '</div>'+
+        '<div style="font-size:15px;font-weight:600;color:#0F6E56;margin-top:2px;">'+(r.slot.time||r.slot.label||'')+'</div>'+
+        (r.place?'<div style="font-size:13px;color:#0F6E56;margin-top:6px;opacity:.85;">📍 '+r.place+'</div>':'')+
+      '</div>';
+    }).join('');
+
+    if(rows.length<wantCnt){
+      html+='<div style="background:#FFFBEF;border:1px solid #F0C060;border-radius:10px;padding:12px 14px;font-size:12px;color:#7A5500;line-height:1.7;">'+
+        '희망하신 '+wantCnt+'회 중 '+rows.length+'회가 배정되었습니다.<br>나머지는 배정 준비 중입니다.'+
+        '</div>';
+    }
+    html+='<div style="font-size:11px;color:#aaa;text-align:center;margin-top:14px;line-height:1.7;">'+
+      '배정 시간에 해당 장소로 방문해 주세요.<br>변경이 필요하면 담당 선생님께 문의해 주세요.</div>';
+  }
+
+  document.getElementById('ck-result-body').innerHTML=html;
+  showApplyStep('result');
+  window.scrollTo(0,0);
 }
 function startApply(){
   showApplyStep('form');
@@ -1510,10 +1639,28 @@ function delPlaceSlot(key){
   });
   var taCount=Object.values(TA||{}).filter(function(ta){return ta.place===pName;}).length;
 
+  // 삭제 후 정원을 초과하게 될 슬롯 확인 (이 장소 배정분은 빠지므로 제외하고 계산)
+  var overSlots=[];
+  Object.values(SLOTS).forEach(function(s){
+    var cnt=0;
+    getSlotEntries(s.key).forEach(function(r){
+      if(r.place!==pName) cnt++;
+    });
+    if(cnt>remain) overSlots.push({slot:s, cnt:cnt});
+  });
+
   var msg='「'+pName+'」 장소를 삭제하시겠습니까?\n\n';
   msg+='· 남은 장소 '+remain+'개로 모든 슬롯 정원이 조정됩니다.\n';
   if(affected.length) msg+='· 이 장소에 배정된 학생 '+affected.length+'건의 장소가 비워집니다.\n';
   if(taCount) msg+='· 이 장소의 교사 배치 '+taCount+'건이 삭제됩니다.\n';
+  if(overSlots.length){
+    msg+='\n⚠ 다음 '+overSlots.length+'개 슬롯이 정원을 초과하게 됩니다.\n';
+    overSlots.slice(0,5).forEach(function(x){
+      msg+='   · '+slotHumanLabel(x.slot)+' — '+x.cnt+'명 / 정원 '+remain+'명\n';
+    });
+    if(overSlots.length>5) msg+='   · 외 '+(overSlots.length-5)+'건\n';
+    msg+='   (배정은 유지되며, 학생 배정 탭에서 조정해 주세요)\n';
+  }
   msg+='\n이 작업은 되돌릴 수 없습니다.';
 
   if(!confirm(msg)) return;
@@ -1635,8 +1782,9 @@ function buildSlotRemovalUpdates(slotKeys){
       if(a[ak] && slotKeys.indexOf(a[ak])>=0){
         updates[DB+'/applicants/'+a.sid+'/'+ak]='';
         updates[DB+'/applicants/'+a.sid+'/'+((i===1)?'place':('place'+i))]='';
-        updates[DB+'/applicants/'+a.sid+'/'+((i===1)?'teacher1':('teacher1_'+i))]='';
-        updates[DB+'/applicants/'+a.sid+'/'+((i===1)?'teacher2':('teacher2_'+i))]='';
+        // 구버전 교사 필드가 남아 있으면 제거
+        updates[DB+'/applicants/'+a.sid+'/'+((i===1)?'teacher1':('teacher1_'+i))]=null;
+        updates[DB+'/applicants/'+a.sid+'/'+((i===1)?'teacher2':('teacher2_'+i))]=null;
         assignCount++;
       }
     }
@@ -1653,6 +1801,7 @@ function buildSlotRemovalUpdates(slotKeys){
 
   // 교사 배치 삭제
   Object.values(TA||{}).forEach(function(ta){
+    if(!ta||!ta.date||!ta.key) return;
     var sk=ta.date.replace(/-/g,'')+'_'+(ta.timeKey||'');
     if(slotKeys.indexOf(sk)>=0) updates[DB+'/teacher_assigns/'+ta.key]=null;
   });
@@ -2378,7 +2527,6 @@ function renderTeacherAssigns(){
   el.innerHTML=html;
 }
 
-function delTeacherAssign(key){if(confirm('삭제하시겠습니까?'))dbRef(`teacher_assigns/${key}`).remove();}
 
 // ── 통계 & 필터 ───────────────────────────────────────
 function updateStats(){
@@ -2581,12 +2729,6 @@ function cancelAssignRound(sid, asgnKey){
   if(info) updates[DB+'/teacher_assigns/'+info.key]=null;
   db.ref().update(updates);
 }
-function cancelAssign(sid){ // 전체 배정 취소 (초기화용)
-  if(!confirm(`${(AP[sid]&&AP[sid].name)||sid}의 배정을 취소하시겠습니까?`))return;
-  const updates={[`${DB}/applicants/${sid}/asgn`]:'', [`${DB}/applicants/${sid}/place`]:''};
-  for(let i=2;i<=5;i++) updates[`${DB}/applicants/${sid}/asgn${i}`]=null;
-  db.ref().update(updates);
-}
 
 function setAsgnRound(sid, asgnKey, v){
   const a=AP[sid];
@@ -2646,8 +2788,35 @@ function setAsgnRound(sid, asgnKey, v){
   }
   db.ref().update(updates);
 }
-function setAsgn(sid,v){ setAsgnRound(sid,'asgn',v); }
-function setPlaceRound(sid, placeKey, v){ dbRef(`applicants/${sid}/${placeKey}`).set(v||''); }
+function setPlaceRound(sid, placeKey, v){
+  var a=AP[sid];
+  if(!a){ dbRef('applicants/'+sid+'/'+placeKey).set(v||''); return; }
+  var roundNum=(placeKey==='place')?1:parseInt(placeKey.replace('place',''));
+
+  // 장소가 바뀌면 taKey가 달라지므로 기존 교사 배치를 새 위치로 이동
+  var prevInfo=getTaKeyForRound(a, roundNum);
+  var prevTa=prevInfo?TA[prevInfo.key]:null;
+
+  var updates={};
+  updates[DB+'/applicants/'+sid+'/'+placeKey]=v||'';
+
+  if(prevInfo) updates[DB+'/teacher_assigns/'+prevInfo.key]=null;
+
+  if(v && prevTa && (prevTa.t1||prevTa.t2)){
+    // 새 장소 기준으로 키를 다시 계산
+    var tmp={}; for(var k in a) tmp[k]=a[k];
+    tmp[placeKey]=v;
+    var newInfo=getTaKeyForRound(tmp, roundNum);
+    if(newInfo){
+      updates[DB+'/teacher_assigns/'+newInfo.key]={
+        date:newInfo.date, timeKey:newInfo.timeKey, time:newInfo.time,
+        label:newInfo.label, place:newInfo.place,
+        t1:prevTa.t1||'', t2:prevTa.t2||'', key:newInfo.key
+      };
+    }
+  }
+  db.ref().update(updates);
+}
 // 지원자 관리 탭에서 교사 지정 → teacher_assigns에 저장 (단일 원본)
 function setTeacherForRound(sid, roundNum, slotIdx, v){
   var a=AP[sid];
@@ -2699,9 +2868,6 @@ function setTeacherForRound(sid, roundNum, slotIdx, v){
   }
   db.ref().update(updates);
 }
-function setTeacherRound(sid, tKey, v){ /* 구버전 호환 (미사용) */ }
-function setPlace(sid,v){ setPlaceRound(sid,'place',v); }
-function setTeacher(sid,slot,v){ setTeacherRound(sid,`teacher${slot}`,v); }
 function delApplicant(sid){
   var a=AP[sid];
   if(!a){ dbRef('applicants/'+sid).remove(); return; }
@@ -2774,7 +2940,7 @@ function renderSlotStatusList(){
     const barCls=pct>=100?'full':pct>=70?'near':'ok';
     return`<div class="slot-stat-row">
       <span style="color:#555;">${+s.date.split('-')[1]}/${+s.date.split('-')[2]} ${s.label||s.time}</span>
-      <span style="font-weight:700;color:${pct>=100?'#D44040':pct>=70?'#EF9F27':'#1D9E75'};margin-left:8px;">${used}/${s.max}</span>
+      <span style="font-weight:700;color:${used>s.max?'#D44040':pct>=100?'#B07500':pct>=70?'#EF9F27':'#1D9E75'};margin-left:8px;">${used}/${s.max}${used>s.max?' ⚠':''}</span>
     </div>
     <div class="gauge-wrap"><div class="gauge-bar ${barCls}" style="width:${Math.min(pct,100)}%;"></div></div>`;
   }).join('');
@@ -3115,8 +3281,13 @@ function confirmAutoAssign(){
       const placeKey=roundNum===1?'place':`place${roundNum}`;
       const existingSk=roundNum===1?(a&&a.asgn):(a&&a[`asgn${roundNum}`]);
       if(existingSk===sk)return;
+      // 배정이 바뀌면 이전 슬롯의 교사 배치는 무효 → 제거
+      if(a){
+        const prevInfo=getTaKeyForRound(a, roundNum);
+        if(prevInfo) updates[`${DB}/teacher_assigns/${prevInfo.key}`]=null;
+      }
       updates[`${DB}/applicants/${r.sid}/${asgnKey}`]=sk;
-      updates[`${DB}/applicants/${r.sid}/${placeKey}`]=place; // 모든 회차 장소 저장
+      updates[`${DB}/applicants/${r.sid}/${placeKey}`]=place;
       newCount++;
     });
     if(newCount>0)cnt++;
@@ -3133,7 +3304,6 @@ function confirmAutoAssign(){
   });
 }
 
-function autoAssign(){ showAutoAssignModal(); }
 
 function resetAllAssign(){
   var taCount=Object.keys(TA||{}).length;
@@ -3257,8 +3427,8 @@ function renderWcal(){
           }).join('');
           h+='<td>'+
             '<div style="font-size:9px;color:#888;display:flex;justify-content:space-between;margin-bottom:3px;padding:0 2px;">'+
-              '<span>'+used+'/'+max+'명</span>'+
-              '<span style="color:'+(pct>=100?'#D44040':pct>=70?'#EF9F27':'#1D9E75')+';font-weight:700;">'+pct+'%</span>'+
+              '<span'+(used>max?' style="color:#D44040;font-weight:700;"':'')+'>'+used+'/'+max+'명'+(used>max?' ⚠':'')+'</span>'+
+              '<span style="color:'+(used>max?'#D44040':pct>=100?'#B07500':pct>=70?'#EF9F27':'#1D9E75')+';font-weight:700;">'+pct+'%</span>'+
             '</div>'+
             '<div class="gauge-wrap" style="margin-bottom:4px;"><div class="gauge-bar '+barCls+'" style="width:'+Math.min(pct,100)+'%;"></div></div>'+
             '<div class="drop-zone" data-sk="'+slotK+'" ondragover="onDragOver(event)" ondrop="onDrop(event,\''+slotK+'\')" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)">'+chipsHtml+'</div>'+
@@ -3609,7 +3779,13 @@ function showChipModal(sid,sk){
   const p=parseSid(a.sid);
   const slot=SLOTS[sk];
   const assignLabel=slot?slotHumanLabel(slot):(sk||'');
-  modalCtx={sid,sk};
+  // 이 슬롯에 해당하는 회차 찾기
+  var mRound=1;
+  var mWant=Math.max(1,parseInt(a.appCnt)||1);
+  for(var mi=1;mi<=mWant;mi++){
+    if(a[(mi===1)?'asgn':('asgn'+mi)]===sk){ mRound=mi; break; }
+  }
+  modalCtx={sid:sid, sk:sk, round:mRound};
   const extraHtml=(a.extra&&a.extra.univQ)
     ?`<div class="dr" style="flex-direction:column;gap:4px;"><span class="dl">대학 자체 질문</span><span style="font-size:12px;color:#888;">${a.extra.univQ}</span></div>`
     :(a.extra&&a.extra.mmiSchool)
@@ -3632,10 +3808,22 @@ function showChipModal(sid,sk){
 }
 function removeAssignment(){
   if(!modalCtx)return;
-  const updates={
-    [`${DB}/applicants/${modalCtx.sid}/asgn`]:'',
-    [`${DB}/applicants/${modalCtx.sid}/place`]:''
-  };
+  var sid=modalCtx.sid;
+  var roundNum=modalCtx.round||1;
+  var a=AP[sid];
+  if(!a){ closeModal(); return; }
+
+  if(!confirm((a.name||sid)+'의 '+roundNum+'회차 배정을 취소하시겠습니까?')) return;
+
+  var asgnKey=(roundNum===1)?'asgn':('asgn'+roundNum);
+  var placeKey=(roundNum===1)?'place':('place'+roundNum);
+  // 연결된 교사 배치도 함께 제거
+  var info=getTaKeyForRound(a, roundNum);
+
+  var updates={};
+  updates[DB+'/applicants/'+sid+'/'+asgnKey]='';
+  updates[DB+'/applicants/'+sid+'/'+placeKey]='';
+  if(info) updates[DB+'/teacher_assigns/'+info.key]=null;
   db.ref().update(updates).then(closeModal);
 }
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');modalCtx=null;}
